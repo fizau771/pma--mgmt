@@ -51,7 +51,7 @@ export default function App(){
   }
 
   if(!login)return <div className="login"><div className="loginGlow"/><form onSubmit={signin} className="loginCard">
-    <div className="crest">🛡️</div><div className="eyebrow">PAKISTAN MILITARY ACADEMY</div><h1>Cadet Management</h1>
+    <div className="crest"><img src="/pma-logo.jpg" alt="Pakistan Military Academy logo"/></div><div className="eyebrow">PAKISTAN MILITARY ACADEMY</div><h1>Cadet Management</h1>
     <p>Secure academic administration portal</p>
     <input placeholder="Username" value={u} onChange={e=>setU(e.target.value)}/>
     <input type="password" placeholder="Password" value={p} onChange={e=>setP(e.target.value)}/>
@@ -66,7 +66,7 @@ export default function App(){
 
   return <main>
     <aside>
-      <div className="brand"><div className="brandMark">🛡️</div><div><b>PMA</b><span>CADET MANAGEMENT</span></div></div>
+      <div className="brand"><div className="brandMark"><img src="/pma-logo.jpg" alt="PMA logo"/></div><div><b>PMA</b><span>CADET MANAGEMENT</span></div></div>
       <div className="navLabel">MAIN MENU</div>
       {nav.map(([x,icon,label])=><button className={tab===x?"nav active":"nav"} onClick={()=>setTab(x)} key={x}><i>{icon}</i>{label}<em>{tab===x?"•":""}</em></button>)}
       <div className="sidebarBottom"><div className="userMini"><div className="avatar">A</div><div><b>Administrator</b><small>System Admin</small></div></div><button className="logout" onClick={()=>setLogin(false)}>↪ Logout</button></div>
@@ -103,7 +103,7 @@ export default function App(){
 
 function Dashboard({cadets,ranked,setTab}){
   const avg=cadets.length?cadets.reduce((s,c)=>s+pct(c.marks||{}),0)/cadets.length:0;
-  return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Monitor cadet registration, courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><div className="heroShield">🛡️</div></div>
+  return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Monitor cadet registration, courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/pma-logo.jpg" alt="Pakistan Military Academy logo"/></div>
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><Card n={avg.toFixed(1)+"%"} t="Average Result" icon="◈"/><Card n={ranked[0]?.percentage?.toFixed(1)||"0"} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.position}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions <span>→</span></button></div></Panel></div>
   </>;
