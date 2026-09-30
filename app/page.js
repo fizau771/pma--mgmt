@@ -69,6 +69,13 @@ export default function App(){
     setCadets(cs=>cs.map(x=>x.id===c.id?{...x,term:TERMS[i+1],courses:[]}:x));
     msg("Cadet promoted to "+TERMS[i+1]+". Assign the new term courses.");
   }
+  function relegate(c){
+    const i=TERMS.indexOf(c.term);
+    if(i===0)return msg("Cadet is already in 1st Term.");
+    if(!confirm("Relegate "+c.name+" to "+TERMS[i-1]+"?"))return;
+    setCadets(cs=>cs.map(x=>x.id===c.id?{...x,term:TERMS[i-1],courses:[]}:x));
+    msg("Cadet relegated to "+TERMS[i-1]+". Reassign the term courses if required.");
+  }
   function saveMarks(){
     setCadets(cs=>cs.map(c=>c.id===mid?{...c,marks:{
       quiz:Math.max(0,Math.min(100,+marks.quiz||0)),mid:Math.max(0,Math.min(100,+marks.mid||0)),
@@ -136,7 +143,7 @@ export default function App(){
           <label>Company<select value={form.company} onChange={e=>setForm({...form,company:e.target.value})}>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select></label><label>Platoon<select value={form.platoon} onChange={e=>setForm({...form,platoon:e.target.value})}>{PLATOONS.map(x=><option key={x}>{x}</option>)}</select></label>
           <label>Current Term<select value={form.term} onChange={e=>setForm({...form,term:e.target.value})}>{TERMS.map(x=><option key={x}>{x}</option>)}</select></label><button className="primary">Register Cadet <span>→</span></button>
         </form><div className="excelHint"><b>Excel upload format</b><span>Required: Roll Number, Name. Optional: Company, Platoon, Term.</span><small>Duplicate roll numbers are skipped automatically.</small></div></Panel>
-        <Panel title={"Registered Cadets · "+cadetFiltered.length} icon="♙"><div className="list">{cadetFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} Company · {c.platoon} Platoon</small></div></div><div className="actions"><span className="pill">{c.term}</span><button className="outline" onClick={()=>promote(c)}>Promote</button></div></div>)}{!cadetFiltered.length&&<Empty text="No cadets match your search or filters."/>}</div></Panel></div>
+        <Panel title={"Registered Cadets · "+cadetFiltered.length} icon="♙"><div className="list">{cadetFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} Company · {c.platoon} Platoon</small></div></div><div className="actions"><span className="pill">{c.term}</span><button className="outline" onClick={()=>promote(c)}>Promote</button><button className="outline relegate" onClick={()=>relegate(c)}>Relegate</button></div></div>)}{!cadetFiltered.length&&<Empty text="No cadets match your search or filters."/>}</div></Panel></div>
       </>}
 
       {tab==="courses"&&<><div className="filterPanel"><div className="filterTitle">Course Assignment Filters</div><div className="filterGrid three"><select value={courseTerm} onChange={e=>setCourseTerm(e.target.value)}>{TERMS.map(x=><option key={x}>{x}</option>)}</select><select value={courseCompany} onChange={e=>setCourseCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={coursePlatoon} onChange={e=>setCoursePlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select></div></div>
