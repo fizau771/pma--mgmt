@@ -34,13 +34,20 @@ export default function App(){
   useEffect(()=>{try{const x=localStorage.getItem("pma-cadets-v9");if(x)setCadets(JSON.parse(x))}catch{}},[]);
   useEffect(()=>{if(login)localStorage.setItem("pma-cadets-v9",JSON.stringify(cadets))},[cadets,login]);
 
-  const ranked=useMemo(()=>[...cadets].map(c=>({...c,percentage:pct(c.marks||{})})).sort((a,b)=>b.percentage-a.percentage).map((c,i)=>({...c,overallPosition:i+1})),[cadets]);
+  const activeCadets=useMemo(()=>cadets.filter(c=>c.status!=="relegated"),[cadets]);
+  const relegatedCadets=useMemo(()=>cadets.filter(c=>c.status==="relegated"),[cadets]);
+  const ranked=useMemo(()=>[...activeCadets].map(c=>({...c,percentage:pct(c.marks||{})})).sort((a,b)=>b.percentage-a.percentage).map((c,i)=>({...c,overallPosition:i+1})),[activeCadets]);
 
   const cadetFiltered=ranked.filter(c=>
     (cadetCompany==="All"||c.company===cadetCompany)&&
     (cadetPlatoon==="All"||c.platoon===cadetPlatoon)&&
     (cadetTerm==="All"||c.term===cadetTerm)&&
     (c.roll+" "+c.name).toLowerCase().includes(cadetQ.toLowerCase())
+  );
+  const relegatedFiltered=relegatedCadets.filter(c=>
+    (c.roll+" "+c.name).toLowerCase().includes(cadetQ.toLowerCase())&&
+    (cadetCompany==="All"||c.company===cadetCompany)&&
+    (cadetPlatoon==="All"||c.platoon===cadetPlatoon)
   );
   const markFiltered=ranked.filter(c=>
     (markCompany==="All"||c.company===markCompany)&&
@@ -70,11 +77,9 @@ export default function App(){
     msg("Cadet promoted to "+TERMS[i+1]+". Assign the new term courses.");
   }
   function relegate(c){
-    const i=TERMS.indexOf(c.term);
-    if(i===0)return msg("Cadet is already in 1st Term.");
-    if(!confirm("Relegate "+c.name+" to "+TERMS[i-1]+"?"))return;
-    setCadets(cs=>cs.map(x=>x.id===c.id?{...x,term:TERMS[i-1],courses:[]}:x));
-    msg("Cadet relegated to "+TERMS[i-1]+". Reassign the term courses if required.");
+    if(!confirm("Relegate "+c.name+"? The cadet will be removed from all terms, courses, rankings and academic lists and shown only under Relegated Cadets."))return;
+    setCadets(cs=>cs.map(x=>x.id===c.id?{...x,status:"relegated",term:null,courses:[]}:x));
+    msg(c.name+" has been relegated and removed from all active academic lists.");
   }
   function saveMarks(){
     setCadets(cs=>cs.map(c=>c.id===mid?{...c,marks:{
@@ -143,7 +148,8 @@ export default function App(){
           <label>Company<select value={form.company} onChange={e=>setForm({...form,company:e.target.value})}>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select></label><label>Platoon<select value={form.platoon} onChange={e=>setForm({...form,platoon:e.target.value})}>{PLATOONS.map(x=><option key={x}>{x}</option>)}</select></label>
           <label>Current Term<select value={form.term} onChange={e=>setForm({...form,term:e.target.value})}>{TERMS.map(x=><option key={x}>{x}</option>)}</select></label><button className="primary">Register Cadet <span>→</span></button>
         </form><div className="excelHint"><b>Excel upload format</b><span>Required: Roll Number, Name. Optional: Company, Platoon, Term.</span><small>Duplicate roll numbers are skipped automatically.</small></div></Panel>
-        <Panel title={"Registered Cadets · "+cadetFiltered.length} icon="♙"><div className="list">{cadetFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} Company · {c.platoon} Platoon</small></div></div><div className="actions"><span className="pill">{c.term}</span><button className="outline" onClick={()=>promote(c)}>Promote</button><button className="outline relegate" onClick={()=>relegate(c)}>Relegate</button></div></div>)}{!cadetFiltered.length&&<Empty text="No cadets match your search or filters."/>}</div></Panel></div>
+        <Panel title={"Registered Cadets · "+cadetFiltered.length} icon="♙"><div className="list">{cadetFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} Company · {c.platoon} Platoon</small></div></div><div className="actions"><span className="pill">{c.term}</span><button className="outline" onClick={()=>promote(c)}>Promote</button><button className="outline relegate" onClick={()=>relegate(c)}>Relegate</button></div></div>)}{!cadetFiltered.length&&<Empty text="No active cadets match your search or filters."/>}</div></Panel>
+        <Panel title={"Relegated Cadets · "+relegatedFiltered.length} icon="⚠"><div className="list">{relegatedFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} Company · {c.platoon} Platoon</small></div></div><div className="actions"><span className="pill">RELEGATED</span></div></div>)}{!relegatedFiltered.length&&<Empty text="No relegated cadets."/>}</div></Panel></div>
       </>}
 
       {tab==="courses"&&<><div className="filterPanel"><div className="filterTitle">Course Assignment Filters</div><div className="filterGrid three"><select value={courseTerm} onChange={e=>setCourseTerm(e.target.value)}>{TERMS.map(x=><option key={x}>{x}</option>)}</select><select value={courseCompany} onChange={e=>setCourseCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={coursePlatoon} onChange={e=>setCoursePlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select></div></div>
