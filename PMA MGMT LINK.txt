@@ -1,1 +1,1 @@
-https://pma-mgmt-main.vercel.app/
+https://pma-mgmt.vercel.app/
