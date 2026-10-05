@@ -181,7 +181,7 @@ function ResultGraph({ranked,scope,company,platoon}){
   if(scope==="overall")data=ranked.slice(0,7).map(c=>({label:c.name,value:c.percentage}));
   if(scope==="company")data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co&&(platoon==="All"||c.platoon===platoon));return x.length?{label:co,value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
   if(scope==="platoon")data=PLATOONS.map(pl=>{const x=ranked.filter(c=>c.platoon===pl&&(company==="All"||c.company===company));return x.length?{label:pl+" Platoon",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
-  const total=data.reduce((s,d)=>s+d.value,0),colors=["#2f7d5b","#62a982","#9acb9d","#d8b65a","#e7cf82","#8eb6a0","#b7d5bd"];
+  const total=data.reduce((s,d)=>s+d.value,0),colors=["#2f7d5b","#78aee8","#e0a83a","#df6b6b","#8b76c7","#58a9a0","#c58a5a"];
   let angle=-90;const cx=145,cy=145,r=128;
   const pt=a=>{const q=a*Math.PI/180;return[cx+r*Math.cos(q),cy+r*Math.sin(q)]};
   const slices=data.map((d,i)=>{const st=angle,sw=total?d.value/total*360:0;angle+=sw;const [x1,y1]=pt(st),[x2,y2]=pt(angle);return{...d,i,color:colors[i%colors.length],path:"M "+cx+" "+cy+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+(sw>180?1:0)+" 1 "+x2+" "+y2+" Z"}});
