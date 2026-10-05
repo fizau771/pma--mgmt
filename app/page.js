@@ -198,7 +198,7 @@ function Dashboard({cadets,ranked,setTab,setCadets}){
       for(let j=0;j<5;j++){
         const n=names[ci*5+j];
         const pass=j<3;
-        const base=pass?62+(j*8)+(ci*2):28+(j*7)+(ci*2);
+        const base=pass?62+(j*8)+(ci*2):25+((j-3)*7)+(ci*2);
         const marks={quiz:base+3,mid:base-2,final:base+4,assign:base+1,speaking:base+5};
         demo.push({id:Date.now()+ci*10+j+1,roll:"D-"+(ci*5+j+1).toString().padStart(3,"0"),name:n,company,platoon:PLATOONS[(ci+j)%3],term:"1st Term",courses:["Military Orientation","Drill"],marks});
       }
