@@ -61,3 +61,108 @@
 @media(max-width:1000px){.dashboardInsights{grid-template-columns:1fr 1fr}.dashboardInsights .panel:last-child{grid-column:1/-1}}
 @media(max-width:650px){.dashboardInsights{grid-template-columns:1fr}.dashboardInsights .panel:last-child{grid-column:auto}.gradeLegend{font-size:6px}.termLine{height:165px}}
 @media(prefers-reduced-motion:reduce){.termStep>span,.gradeBar span,.companyPerfTrack span{animation:none!important}}
+
+/* Enhanced dashboard insight popup + animation */
+.dashboardInsights>.panel{
+  position:relative;
+  overflow:visible;
+  transition:transform .28s cubic-bezier(.22,.61,.36,1),box-shadow .28s ease,filter .28s ease;
+  animation:insightPanelIn .7s cubic-bezier(.22,.61,.36,1) both;
+}
+.dashboardInsights>.panel:nth-child(2){animation-delay:.1s}
+.dashboardInsights>.panel:nth-child(3){animation-delay:.2s}
+.dashboardInsights>.panel:hover{
+  transform:translateY(-7px) scale(1.018);
+  box-shadow:0 18px 38px rgba(23,60,42,.20),0 0 0 1px rgba(47,118,85,.10);
+  z-index:5;
+}
+.dashboardInsights>.panel:hover::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:14px;
+  box-shadow:0 0 0 5px rgba(47,118,85,.06),0 0 28px rgba(47,118,85,.13);
+  pointer-events:none;
+  animation:panelGlow .3s ease both;
+}
+@keyframes insightPanelIn{
+  from{opacity:0;transform:translateY(16px) scale(.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes panelGlow{
+  from{opacity:0;transform:scale(.96)}
+  to{opacity:1;transform:scale(1)}
+}
+
+/* Stronger animated Term Performance */
+.termStep{
+  animation:termStepIn .65s cubic-bezier(.22,.61,.36,1) both;
+}
+.termStep:nth-child(2){animation-delay:.08s}
+.termStep:nth-child(3){animation-delay:.16s}
+.termStep:nth-child(4){animation-delay:.24s}
+.termStep:hover{
+  transform:translateY(-6px);
+  filter:drop-shadow(0 7px 8px rgba(23,60,42,.14));
+}
+.termStep:hover .termDot{
+  transform:scale(1.18);
+  box-shadow:0 0 0 5px rgba(47,118,85,.10);
+  background:#dcefe3;
+}
+.termStep:hover>span{
+  transform:scaleX(1.12);
+  filter:brightness(1.08);
+}
+.termDot,.termStep>span{transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
+@keyframes termStepIn{
+  from{opacity:0;transform:translateY(20px) scale(.92)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Stronger animated Grade Distribution */
+.gradeItem{
+  animation:gradeItemIn .65s cubic-bezier(.22,.61,.36,1) both;
+  transition:transform .25s ease,filter .25s ease;
+}
+.gradeItem:nth-child(1){animation-delay:.05s}
+.gradeItem:nth-child(2){animation-delay:.12s}
+.gradeItem:nth-child(3){animation-delay:.19s}
+.gradeItem:nth-child(4){animation-delay:.26s}
+.gradeItem:nth-child(5){animation-delay:.33s}
+.gradeItem:hover{
+  transform:translateY(-7px) scale(1.06);
+  filter:drop-shadow(0 8px 9px rgba(23,60,42,.16));
+}
+.gradeItem:hover .gradeBar span{
+  transform:scaleX(1.14);
+  filter:brightness(1.08);
+}
+.gradeBar span{transition:transform .25s ease,filter .25s ease}
+@keyframes gradeItemIn{
+  from{opacity:0;transform:translateY(22px) scale(.9)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Popup-style hover feedback for company comparison rows */
+.companyPerf{
+  position:relative;
+}
+.companyPerf:hover::after{
+  content:"View Performance";
+  position:absolute;
+  top:-8px;
+  right:9px;
+  padding:4px 7px;
+  border-radius:8px;
+  background:rgba(255,255,255,.96);
+  color:#315c47;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.3px;
+  box-shadow:0 4px 12px rgba(23,60,42,.16);
+  animation:popupBadge .22s ease both;
+}
+@media(prefers-reduced-motion:reduce){
+  .dashboardInsights>.panel,.termStep,.gradeItem,.termStep>span,.gradeBar span{animation:none!important;transition:none!important}
+}
