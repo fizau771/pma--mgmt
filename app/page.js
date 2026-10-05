@@ -141,7 +141,7 @@ export default function App(){
     <section className="content"><header><div><div className="crumb">PMA / <b>{pageTitle}</b></div><h1>{pageTitle}</h1><p>Pakistan Military Academy · Cadet Management Portal</p></div><div className="status"><span/> System Online</div></header>
       {notice&&<div className="notice">✓ {notice}</div>}
 
-      {tab==="dashboard"&&<Dashboard cadets={cadets} ranked={ranked} setTab={setTab}/>}
+      {tab==="dashboard"&&<Dashboard cadets={cadets} ranked={ranked} setTab={setTab} setCadets={setCadets}/>}
       {tab==="cadets"&&<><div className="toolbar"><div><h2>Cadet Register</h2><p>Register individually or import an entire Excel sheet.</p></div><div className="toolbarActions"><label className="uploadBtn">{excelBusy?"Reading Excel…":"＋ Import Excel"}<input type="file" accept=".xlsx,.xls,.csv" onChange={importExcel} disabled={excelBusy}/></label></div></div>
         <div className="filterPanel"><div className="filterTitle">Search & Filters</div><div className="filterGrid"><input placeholder="⌕ Search name or cadet number…" value={cadetQ} onChange={e=>setCadetQ(e.target.value)}/><select value={cadetCompany} onChange={e=>setCadetCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={cadetPlatoon} onChange={e=>setCadetPlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select><select value={cadetTerm} onChange={e=>setCadetTerm(e.target.value)}><option value="All">All Terms</option>{TERMS.map(x=><option key={x}>{x}</option>)}</select></div></div>
         <div className="two"><Panel title="Register New Cadet" icon="＋"><form onSubmit={add} className="form">
@@ -189,16 +189,33 @@ function ResultGraph({ranked,scope,company,platoon}){
     {slices.map(s=><path key={s.i} d={s.path} fill={s.color} className={selected===s.i?"pieSlice selected":"pieSlice"} onClick={()=>setSelected(selected===s.i?null:s.i)} onMouseEnter={()=>setSelected(s.i)} onMouseLeave={()=>setSelected(null)}/>)}
   </svg>{selected!==null&&data[selected]&&<div className="pieTooltip">{data[selected].label}: {data[selected].value.toFixed(2)}%</div>}</div></div>
 }
-function Dashboard({cadets,ranked,setTab}){
+function Dashboard({cadets,ranked,setTab,setCadets}){
   const avg=cadets.length?cadets.reduce((s,c)=>s+pct(c.marks||{}),0)/cadets.length:0;
+  function loadDemoData(){
+    const names=["Ahmed Khan","Usman Ali","Hamza Raza","Bilal Ahmed","Hassan Shah","Saad Malik","Ahsan Iqbal","Danish Khan","Talha Asif","Fahad Noor","Zain Abbas","Owais Tariq","Muneeb Akram","Rayan Ahmed","Shahzaib Khan","Waleed Hussain","Haris Javed","Salman Riaz","Abdullah Farooq","Arham Nadeem"];
+    const demo=[];
+    COMPANIES.forEach((company,ci)=>{
+      for(let j=0;j<5;j++){
+        const n=names[ci*5+j];
+        const pass=j<3;
+        const base=pass?62+(j*8)+(ci*2):28+(j*7)+(ci*2);
+        const marks={quiz:base+3,mid:base-2,final:base+4,assign:base+1,speaking:base+5};
+        demo.push({id:Date.now()+ci*10+j+1,roll:"D-"+(ci*5+j+1).toString().padStart(3,"0"),name:n,company,platoon:PLATOONS[(ci+j)%3],term:"1st Term",courses:["Military Orientation","Drill"],marks});
+      }
+    });
+    setCadets(cs=>{
+      const existing=new Set(cs.map(c=>c.roll));
+      return [...demo.filter(c=>!existing.has(c.roll)),...cs];
+    });
+  }
   return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Manage cadets, term courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div>
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><Card n={avg.toFixed(1)+"%"} t="Average Result" icon="◈"/><Card n={ranked[0]?.percentage?.toFixed(1)||"0"} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.overallPosition}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
-    <PassFailChart ranked={ranked}/>
+    <PassFailChart ranked={ranked} onLoadDemo={loadDemoData}/>
   </>;
 }
 
-function PassFailChart({ranked}){
+function PassFailChart({ranked,onLoadDemo}){
   const [scope,setScope]=useState("company");
   const groups=scope==="company"?COMPANIES:PLATOONS;
   const data=groups.map(group=>{
@@ -210,7 +227,7 @@ function PassFailChart({ranked}){
   const tick=Math.max(1,Math.ceil(max/4));
   const ticks=[tick*4,tick*3,tick*2,tick,0];
   return <Panel title="Pass & Fail Cadets" icon="▥">
-    <div className="passFailHead"><div><b>Cadet Performance Distribution</b><span>Pass: 50% and above · Fail: below 50%</span></div><div className="scopeTabs"><button className={scope==="company"?"selected":""} onClick={()=>setScope("company")}>Company Wise</button><button className={scope==="platoon"?"selected":""} onClick={()=>setScope("platoon")}>Platoon Wise</button></div></div>
+    <div className="passFailHead"><div><b>Cadet Performance Distribution</b><span>Pass: 50% and above · Fail: below 50%</span></div><div className="passFailHeadActions"><button className="outline demoDataBtn" onClick={onLoadDemo}>＋ Load Demo Data</button><div className="scopeTabs"><button className={scope==="company"?"selected":""} onClick={()=>setScope("company")}>Company Wise</button><button className={scope==="platoon"?"selected":""} onClick={()=>setScope("platoon")}>Platoon Wise</button></div></div></div>
     <div className="passFailChart">
       <div className="passFailAxis">{ticks.map((t,i)=><span key={i}>{t}</span>)}</div>
       <div className="passFailPlot">
