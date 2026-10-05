@@ -212,7 +212,24 @@ function Dashboard({cadets,ranked,setTab,setCadets}){
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><Card n={avg.toFixed(1)+"%"} t="Average Result" icon="◈"/><Card n={ranked[0]?.percentage?.toFixed(1)||"0"} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.overallPosition}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
     <PassFailChart ranked={ranked} onLoadDemo={loadDemoData}/>
+    <CompanyOverview cadets={ranked}/>
   </>;
+}
+
+function CompanyOverview({cadets}){
+  const icons=["♜","⚔","✥","♞"];
+  return <Panel title="Company Overview">
+    <div className="companyOverview">
+      {COMPANIES.map((company,i)=>{
+        const count=cadets.filter(c=>c.company===company).length;
+        return <div className={"companyTile companyTile"+i} key={company}>
+          <div className="companyTileIcon">{icons[i]}</div>
+          <b>{company}</b>
+          <span>{count} Cadets</span>
+        </div>;
+      })}
+    </div>
+  </Panel>;
 }
 
 function PassFailChart({ranked,onLoadDemo}){
