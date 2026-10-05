@@ -175,6 +175,7 @@ function PositionRow({c,all}){
   return <div className="positionRow"><b className="posNum">#{c.overallPosition}</b><b>#{company}</b><b>#{platoon}</b><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} · {c.platoon} Platoon</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>
 }
 function ResultGraph({ranked,scope,company,platoon}){
+  const [selected,setSelected]=useState(null);
   let data=[];
   if(scope==="overall") data=ranked.map(c=>({label:c.name,sub:c.roll,value:c.percentage})).slice(0,10);
   if(scope==="company"){
@@ -191,7 +192,22 @@ function ResultGraph({ranked,scope,company,platoon}){
   }
   if(company!=="All"&&scope!=="overall")data=data.filter(x=>x.label.startsWith(company));
   if(platoon!=="All"&&scope==="platoon")data=data.filter(x=>x.label.endsWith(platoon));
-  return <div className="graph">{data.length?data.map((d,i)=><div className="graphRow" key={i}><div className="graphLabel"><b>{d.label}</b><small>{d.sub}</small></div><div className="graphTrack"><span style={{width:Math.min(100,Math.max(0,d.value))+"%"}}/></div><strong>{d.value.toFixed(1)}%</strong></div>):<Empty text="No result data for this selection."/>}</div>
+  const max=Math.max(100,...data.map(d=>d.value));
+  return <div className="barChartWrap">
+    {data.length?<><div className="barChart">
+      <div className="yAxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+      <div className="barsArea">
+        <div className="gridLines"><i/><i/><i/><i/><i/></div>
+        <div className="bars">{data.map((d,i)=><button className={"chartBar "+(selected===i?"chosen":"")} key={i} title={d.label+" · "+d.value.toFixed(1)+"%"} onClick={()=>setSelected(selected===i?null:i)}>
+          <span className="barValue">{d.value.toFixed(1)}%</span>
+          <span className="barFill" style={{height:Math.min(100,(d.value/max)*100)+"%"}}/>
+          <small>{d.label}</small>
+        </button>)}</div>
+      </div>
+    </div>
+    {selected!==null&&data[selected]&&<div className="chartInfo"><b>{data[selected].label}</b><span>{data[selected].sub}</span><strong>{data[selected].value.toFixed(2)}%</strong><button onClick={()=>setSelected(null)}>×</button></div>}
+    <div className="chartHint">Click any bar to view its result.</div></>:<Empty text="No result data for this selection."/>}
+  </div>
 }
 function Dashboard({cadets,ranked,setTab}){
   const avg=cadets.length?cadets.reduce((s,c)=>s+pct(c.marks||{}),0)/cadets.length:0;
