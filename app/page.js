@@ -178,45 +178,54 @@ function ResultGraph({ranked,scope,company,platoon}){
   const [selected,setSelected]=useState(null);
   let data=[];
   if(scope==="overall"){
-    data=ranked.slice(0,10).map(c=>({label:c.name,group:"Top 10 Cadets",sub:c.roll+" · "+c.company+" · "+c.platoon+" Platoon",value:c.percentage}));
+    data=ranked.slice(0,6).map(c=>({label:c.name,sub:c.roll+" · "+c.company+" · "+c.platoon+" Platoon",value:c.percentage}));
   }
   if(scope==="company"){
-    for(const co of COMPANIES){
-      for(const pl of PLATOONS){
-        const x=ranked.filter(c=>c.company===co&&c.platoon===pl);
-        if(x.length)data.push({label:pl+" Platoon",group:co,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length});
-      }
-    }
-    if(company!=="All")data=data.filter(x=>x.group===company);
-    if(platoon!=="All")data=data.filter(x=>x.label===platoon+" Platoon");
+    data=COMPANIES.map(co=>{
+      const x=ranked.filter(c=>c.company===co&&(platoon==="All"||c.platoon===platoon));
+      return x.length?{label:co,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null;
+    }).filter(Boolean);
   }
   if(scope==="platoon"){
-    for(const pl of PLATOONS){
-      for(const co of COMPANIES){
-        const x=ranked.filter(c=>c.company===co&&c.platoon===pl);
-        if(x.length)data.push({label:co,group:pl+" Platoon",sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length});
-      }
-    }
-    if(company!=="All")data=data.filter(x=>x.label===company);
-    if(platoon!=="All")data=data.filter(x=>x.group===platoon+" Platoon");
+    data=PLATOONS.map(pl=>{
+      const x=ranked.filter(c=>c.platoon===pl&&(company==="All"||c.company===company));
+      return x.length?{label:pl+" Platoon",sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null;
+    }).filter(Boolean);
   }
-  return <div className="barChartWrap">
-    {data.length?<><div className="chartTitleLine"><b>{scope==="overall"?"Top Cadet Percentages":scope==="company"?"Company & Platoon Average Percentages":"Platoon & Company Average Percentages"}</b><span>Percentage marks</span></div>
-      <div className="barChart">
-        <div className="yAxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
-        <div className="barsArea">
-          <div className="gridLines"><i/><i/><i/><i/><i/></div>
-          <div className="bars groupedBars">{data.map((d,i)=><button className={"chartBar "+(selected===i?"chosen":"")} key={i} title={d.group+" · "+d.label+" · "+d.value.toFixed(2)+"%"} onClick={()=>setSelected(selected===i?null:i)}>
-            <span className="barValue">{d.value.toFixed(1)}%</span>
-            <span className={"barFill companyColor-"+(COMPANIES.indexOf(d.group)+1)} style={{height:Math.min(100,Math.max(0,d.value))+"%"}}/>
-            <small>{d.label}</small>
-            <em>{d.group}</em>
-          </button>)}</div>
+  const total=data.reduce((s,d)=>s+d.value,0);
+  let angle=-90;
+  const colors=["#2f7d53","#d9a441","#3f7fc1","#c85c5c","#7d61b5","#2c9b95"];
+  const slices=data.map((d,i)=>{
+    const startAngle=angle;
+    const sweep=total?d.value/total*360:0;
+    angle+=sweep;
+    const endAngle=angle;
+    const r=92,cx=110,cy=110;
+    const p=a=>{const rad=a*Math.PI/180;return [cx+r*Math.cos(rad),cy+r*Math.sin(rad)]};
+    const [x1,y1]=p(startAngle),[x2,y2]=p(endAngle);
+    const large=sweep>180?1:0;
+    const path="M "+cx+" "+cy+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+large+" 1 "+x2+" "+y2+" Z";
+    return {...d,i,startAngle,endAngle,path,color:colors[i%colors.length]};
+  });
+  return <div className="pieChartWrap">
+    {data.length?<>
+      <div className="pieChartArea">
+        <div className="pieVisual">
+          <svg viewBox="0 0 220 220" className="pieSvg" role="img" aria-label="Percentage results pie chart">
+            {slices.map(s=><path key={s.i} d={s.path} fill={s.color} className={selected===s.i?"pieSlice selected":"pieSlice"} onClick={()=>setSelected(selected===s.i?null:s.i)} onMouseEnter={()=>setSelected(s.i)} onMouseLeave={()=>setSelected(null)}/>)}
+            <circle cx="110" cy="110" r="43" fill="white"/>
+            <text x="110" y="106" textAnchor="middle" className="pieCenterLabel">{selected!==null?data[selected].value.toFixed(1)+"%":"RESULTS"}</text>
+            <text x="110" y="121" textAnchor="middle" className="pieCenterSub">{selected!==null?data[selected].label:"AVERAGE"}</text>
+          </svg>
+        </div>
+        <div className="pieLegend">
+          {slices.map(s=><button key={s.i} className={selected===s.i?"pieLegendItem active":"pieLegendItem"} onClick={()=>setSelected(selected===s.i?null:s.i)}>
+            <i style={{background:s.color}}/><span><b>{s.label}</b><small>{s.sub}</small></span><strong>{s.value.toFixed(1)}%</strong>
+          </button>)}
         </div>
       </div>
-      {selected!==null&&data[selected]&&<div className="chartInfo"><b>{data[selected].group}</b><span>{data[selected].label} · {data[selected].sub}</span><strong>{data[selected].value.toFixed(2)}%</strong><button onClick={()=>setSelected(null)}>×</button></div>}
-      <div className="chartLegend">{COMPANIES.map((x,i)=><span key={x}><i className={"legendDot companyColor-"+(i+1)}/>{x}</span>)}</div>
-      <div className="chartHint">Click any bar to inspect its percentage.</div>
+      {selected!==null&&data[selected]&&<div className="pieInfo"><b>{data[selected].label}</b><span>{data[selected].sub}</span><strong>{data[selected].value.toFixed(2)}%</strong></div>}
+      <div className="chartHint">Hover or click a section to view its percentage.</div>
     </>:<Empty text="No result data for this selection."/>}
   </div>
 }
