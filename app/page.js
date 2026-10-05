@@ -12,9 +12,10 @@ const TERM_COURSES={
   "4th Term":["Advanced Tactics","Command & Staff","Military Administration","Leadership III","Final Exercise"]
 };
 const seed=[
-  {id:1,roll:"24-001",name:"Ali Ahmed",company:"Khalid",platoon:"1st",term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:91,mid:82,final:88,assign:86}}
+  {id:1,roll:"24-001",name:"Ali Ahmed",company:"Khalid",platoon:"1st",term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:91,mid:82,final:88,assign:86,speaking:90}}
 ];
-const pct=m=>Math.round(((+m.quiz||0)*.2+(+m.mid||0)*.25+(+m.final||0)*.35+(+m.assign||0)*.2)*100)/100;
+const pct=m=>Math.round(((+m.quiz||0)*.2+(+m.mid||0)*.25+(+m.final||0)*.35+(+m.assign||0)*.15+(+m.speaking||0)*.05)*100)/100;
+const grade=p=>p>=80?"A":p>=70?"B":p>=60?"C":p>=50?"D":"F";
 const clean=v=>String(v??"").trim();
 const norm=v=>clean(v).toLowerCase().replace(/[\s_\-]/g,"");
 const field=(row,names)=>{for(const n of names){const k=Object.keys(row).find(x=>norm(x)===norm(n));if(k&&clean(row[k]))return clean(row[k])}return ""};
@@ -66,7 +67,7 @@ export default function App(){
     e.preventDefault();
     if(!form.name.trim()||!form.roll.trim())return msg("Enter roll number and cadet name.");
     if(cadets.some(c=>c.roll.toLowerCase()===form.roll.trim().toLowerCase()))return msg("That roll number is already registered.");
-    setCadets(cs=>[{id:Date.now(),...form,courses:[],marks:{quiz:0,mid:0,final:0,assign:0}},...cs]);
+    setCadets(cs=>[{id:Date.now(),...form,courses:[],marks:{quiz:0,mid:0,final:0,assign:0,speaking:0}},...cs]);
     setForm({...form,roll:"",name:""});msg("Cadet registered successfully.");
   }
   function promote(c){
@@ -84,7 +85,7 @@ export default function App(){
   function saveMarks(){
     setCadets(cs=>cs.map(c=>c.id===mid?{...c,marks:{
       quiz:Math.max(0,Math.min(100,+marks.quiz||0)),mid:Math.max(0,Math.min(100,+marks.mid||0)),
-      final:Math.max(0,Math.min(100,+marks.final||0)),assign:Math.max(0,Math.min(100,+marks.assign||0))
+      final:Math.max(0,Math.min(100,+marks.final||0)),assign:Math.max(0,Math.min(100,+marks.assign||0)),speaking:Math.max(0,Math.min(100,+marks.speaking||0))
     }}:c));
     setMid(null);msg("Marks saved and percentage recalculated.");
   }
@@ -157,14 +158,14 @@ export default function App(){
       </>}
 
       {tab==="marks"&&<><div className="filterPanel"><div className="filterTitle">Search & Filters</div><div className="filterGrid three"><input placeholder="⌕ Search name or cadet number…" value={markQ} onChange={e=>setMarkQ(e.target.value)}/><select value={markCompany} onChange={e=>setMarkCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={markPlatoon} onChange={e=>setMarkPlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select></div></div>
-        <Panel title="Results & Exams" icon="✎"><p className="muted">Add or edit marks. Weighted percentage: Quiz 20% · Mid Term 25% · Final Term 35% · Assignments 20%.</p>{markFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} · {c.platoon} Platoon · {c.term}</small></div></div><div className="marksPreview"><span>Q {c.marks?.quiz||0}</span><span>MT {c.marks?.mid||0}</span><span>FT {c.marks?.final||0}</span><span>A {c.marks?.assign||0}</span></div><div className="resultMini"><strong>{pct(c.marks||{}).toFixed(2)}%</strong><button className="outline" onClick={()=>{setMid(c.id);setMarks(c.marks||{quiz:0,mid:0,final:0,assign:0})}}>Add / Edit Marks</button></div></div>)}{!markFiltered.length&&<Empty text="No cadets match your search or filters."/>}</Panel></>}
+        <Panel title="Results & Exams" icon="✎"><p className="muted">Add or edit marks. Weighted percentage: Quiz 20% · Mid Term 25% · Final Term 35% · Assignments 15% · Public Speaking 5%.</p>{markFiltered.map(c=><div className="cadet" key={c.id}><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} · {c.platoon} Platoon · {c.term}</small></div></div><div className="marksPreview"><span>Q {c.marks?.quiz||0}</span><span>MT {c.marks?.mid||0}</span><span>FT {c.marks?.final||0}</span><span>A {c.marks?.assign||0}</span><span>PS {c.marks?.speaking||0}</span></div><div className="resultMini"><strong>{pct(c.marks||{}).toFixed(2)}%</strong><button className="outline" onClick={()=>{setMid(c.id);setMarks(c.marks||{quiz:0,mid:0,final:0,assign:0})}}>Add / Edit Marks</button></div></div>)}{!markFiltered.length&&<Empty text="No cadets match your search or filters."/>}</Panel></>}
 
       {tab==="results"&&<><div className="filterPanel"><div className="filterTitle">Results Filters</div><div className="filterGrid three"><select value={resultCompany} onChange={e=>setResultCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={resultPlatoon} onChange={e=>setResultPlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select><div className="scopeTabs"><button className={graphScope==="overall"?"selected":""} onClick={()=>setGraphScope("overall")}>Overall</button><button className={graphScope==="company"?"selected":""} onClick={()=>setGraphScope("company")}>Company</button><button className={graphScope==="platoon"?"selected":""} onClick={()=>setGraphScope("platoon")}>Platoon</button></div></div></div>
         <div className="resultLayout"><Panel title="Positions" icon="◈"><div className="positionHead"><span>Overall</span><span>Company</span><span>Platoon</span><span>Cadet</span><span>Result</span></div>{resultFiltered.map(c=><PositionRow key={c.id} c={c} all={ranked}/>)}</Panel><Panel title="Percentage Results" icon="▥"><ResultGraph ranked={ranked} scope={graphScope} company={resultCompany} platoon={resultPlatoon}/></Panel></div>
       </>}
 
       {courseCadet&&<Modal title={"Assign "+(cadets.find(c=>c.id===courseCadet)?.term||"")+" Courses"}><p className="muted">Select the courses available for this cadet's current term.</p><div className="checkGrid">{TERM_COURSES[cadets.find(c=>c.id===courseCadet)?.term||"1st Term"].map(c=><label className="check" key={c}><input type="checkbox" checked={selectedCourses.includes(c)} onChange={()=>toggleCourse(c)}/><span>{c}</span></label>)}</div><button className="primary" onClick={saveCourses}>Save Courses</button><button className="light" onClick={()=>setCourseCadet(null)}>Cancel</button></Modal>}
-      {mid&&<Modal title="Enter / Edit Marks"><div className="markGrid">{[["quiz","Quiz"],["mid","Mid Term"],["final","Final Term"],["assign","Assignments"]].map(([k,label])=><label key={k}>{label}<input type="number" min="0" max="100" value={marks[k]} onChange={e=>setMarks({...marks,[k]:e.target.value})}/></label>)}</div><p className="livePct">Current weighted percentage: <b>{pct(marks).toFixed(2)}%</b></p><button className="primary" onClick={saveMarks}>Save Marks</button><button className="light" onClick={()=>setMid(null)}>Cancel</button></Modal>}
+      {mid&&<Modal title="Enter / Edit Marks"><div className="markGrid">{[["quiz","Quiz"],["mid","Mid Term"],["final","Final Term"],["assign","Assignments"],["speaking","Public Speaking"]].map(([k,label])=><label key={k}>{label}<input type="number" min="0" max="100" value={marks[k]} onChange={e=>setMarks({...marks,[k]:e.target.value})}/></label>)}</div><p className="livePct">Current weighted percentage: <b>{pct(marks).toFixed(2)}%</b></p><button className="primary" onClick={saveMarks}>Save Marks</button><button className="light" onClick={()=>setMid(null)}>Cancel</button></Modal>}
     </section>
   </main>
 }
@@ -172,7 +173,7 @@ export default function App(){
 function PositionRow({c,all}){
   const company=all.filter(x=>x.company===c.company).sort((a,b)=>b.percentage-a.percentage).findIndex(x=>x.id===c.id)+1;
   const platoon=all.filter(x=>x.company===c.company&&x.platoon===c.platoon).sort((a,b)=>b.percentage-a.percentage).findIndex(x=>x.id===c.id)+1;
-  return <div className="positionRow"><b className="posNum">#{c.overallPosition}</b><b>#{company}</b><b>#{platoon}</b><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} · {c.platoon} Platoon</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>
+  return <div className="positionRow"><b className="posNum">#{c.overallPosition}</b><b>#{company}</b><b>#{platoon}</b><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company} · {c.platoon} Platoon</small></div></div><strong>{c.percentage.toFixed(2)}% · Grade {grade(c.percentage)}</strong></div>
 }
 function ResultGraph({ranked,scope,company,platoon}){
   const [selected,setSelected]=useState(null);
