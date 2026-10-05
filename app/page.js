@@ -125,7 +125,7 @@ export default function App(){
   }
 
   if(!login)return <div className="login"><div className="loginGlow"/><form onSubmit={signin} className="loginCard">
-    <div className="crest"><img src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div><div className="eyebrow">PAKISTAN MILITARY ACADEMY</div><h1>Cadet Management</h1>
+    <div className="crest"><img src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div><div className="eyebrow">PAKISTAN MILITARY ACADEMY</div><h1>Cadet Academic Tracking System</h1>
     <p>Secure academic administration portal</p><input placeholder="Username" value={u} onChange={e=>setU(e.target.value)}/><input type="password" placeholder="Password" value={p} onChange={e=>setP(e.target.value)}/>
     <button className="primary wide">Sign In <span>→</span></button><small>Demo access: <b>admin</b> / <b>PMA@123</b></small>
   </form></div>;
@@ -209,7 +209,7 @@ function Dashboard({cadets,ranked,setTab,setCadets}){
     });
   }
   return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Manage cadets, term courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div>
-    <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><Card n={avg.toFixed(1)+"%"} t="Average Result" icon="◈"/><Card n={ranked[0]?.percentage?.toFixed(1)||"0"} t="Highest Result" icon="★"/></div>
+    <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><ProgressCard value={avg} t="Average Result" icon="◈"/><ProgressCard value={ranked[0]?.percentage||0} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.overallPosition}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
     <PassFailChart ranked={ranked} onLoadDemo={loadDemoData}/>
     <CompanyOverview cadets={ranked}/>
@@ -272,6 +272,27 @@ function PassFailChart({ranked,onLoadDemo}){
   </Panel>;
 }
 function Card({n,t,icon}){return <div className="card"><div className="cardIcon">{icon}</div><div><b>{n}</b><span>{t}</span></div></div>}
+
+function ProgressCard({value,t,icon}){
+  const target=Math.max(0,Math.min(100,Number(value)||0));
+  const [progress,setProgress]=useState(0);
+  useEffect(()=>{
+    const timer=setTimeout(()=>setProgress(target),80);
+    return ()=>clearTimeout(timer);
+  },[target]);
+  const radius=30,circ=2*Math.PI*radius,offset=circ-(progress/100)*circ;
+  return <div className="card progressCard">
+    <div className="progressRing" style={{"--ring-offset":offset}}>
+      <svg viewBox="0 0 72 72" aria-label={t+" "+target.toFixed(1)+"%"}>
+        <circle className="ringTrack" cx="36" cy="36" r={radius}/>
+        <circle className="ringValue" cx="36" cy="36" r={radius}/>
+      </svg>
+      <strong>{progress.toFixed(1)}%</strong>
+      <span>{icon}</span>
+    </div>
+    <div><b>{t}</b><span>Overall percentage</span></div>
+  </div>;
+}
 function Panel({title,icon,children}){return <div className="panel"><div className="panelHead"><h2>{icon&&<i>{icon}</i>}{title}</h2></div>{children}</div>}
 function Modal({title,children}){return <div className="modal"><div className="modalbox"><h2>{title}</h2>{children}</div></div>}
 function Empty({text}){return <div className="empty">{text}</div>}
