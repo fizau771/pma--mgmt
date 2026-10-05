@@ -31,3 +31,33 @@
 
 .companyTileIcon{animation:iconBounce .7s cubic-bezier(.22,.61,.36,1) both}.companyTile:nth-child(2) .companyTileIcon{animation-delay:.08s}.companyTile:nth-child(3) .companyTileIcon{animation-delay:.16s}.companyTile:nth-child(4) .companyTileIcon{animation-delay:.24s}@keyframes iconBounce{0%{opacity:0;transform:translateY(8px) scale(.7)}70%{transform:translateY(-3px) scale(1.08)}100%{opacity:1;transform:none}}@keyframes companyShine{0%{left:-110%}100%{left:150%}}
 .companyTile{cursor:pointer}.companyTile:hover{transform:translateY(-8px) scale(1.045);box-shadow:0 16px 30px rgba(23,60,42,.24);z-index:3}.companyTile:hover .companyTileIcon{transform:scale(1.18) translateY(-2px);filter:drop-shadow(0 3px 4px rgba(0,0,0,.16))}.companyTile:hover b{transform:translateY(-2px)}.companyTile:hover span{opacity:1;transform:translateY(1px)}.companyTile b,.companyTile span,.companyTileIcon{transition:transform .25s ease,opacity .25s ease,filter .25s ease}.companyTile:hover::before{content:"View Company";position:absolute;top:7px;right:7px;padding:3px 6px;border-radius:9px;background:rgba(255,255,255,.9);color:#315c47;font-size:7px;font-weight:800;letter-spacing:.3px;animation:popupBadge .22s ease both}@keyframes popupBadge{from{opacity:0;transform:scale(.7) translateY(-3px)}to{opacity:1;transform:scale(1) translateY(0)}}
+/* Dashboard performance insights */
+.dashboardInsights{display:grid;grid-template-columns:1.15fr .9fr 1.2fr;gap:18px;margin-bottom:18px}
+.dashboardInsights .panel{min-width:0}
+.topThree{display:grid;gap:7px}
+.topThreeRow{display:flex;align-items:center;gap:9px;padding:9px 7px;border-radius:9px;background:#fbfdfb;border:1px solid #e7ece8;transition:.22s ease}
+.topThreeRow:hover{transform:translateX(4px);background:#f1f8f3;box-shadow:0 6px 14px #173c2a12}
+.topThreeRow .medal{font-size:17px;width:24px;text-align:center}.topThreeRow>strong{margin-left:auto;color:#2f7655;font-size:11px}
+.topThreeRow.place1{border-color:#dfc27a;background:#fffaf0}.topThreeRow.place2{border-color:#d6dde0}.topThreeRow.place3{border-color:#dfc1aa}
+.termPerformance{padding:4px 2px}.termLine{height:185px;display:flex;align-items:flex-end;justify-content:space-around;gap:10px;padding:0 4px;border-bottom:1px solid #e4ebe6}
+.termStep{height:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}
+.termStep>span{width:min(34px,65%);background:linear-gradient(180deg,#5aa879,#2f7655);border-radius:7px 7px 2px 2px;min-height:18px;box-shadow:0 5px 12px #173c2a18;animation:termRise .8s cubic-bezier(.22,.61,.36,1) both}
+.termStep:nth-child(2)>span{animation-delay:.08s}.termStep:nth-child(3)>span{animation-delay:.16s}.termStep:nth-child(4)>span{animation-delay:.24s}
+.termDot{width:22px;height:22px;border-radius:50%;background:#eef7f1;color:#2f7655;display:grid;place-items:center;font-size:8px;font-weight:800;margin-bottom:5px}
+.termStep b{font-size:8px;color:#617168;margin-bottom:5px;white-space:nowrap}.termStep strong{font-size:9px;color:#315c47;margin-bottom:4px}.termArrow{text-align:center;color:#8a9790;font-size:8px;margin-top:8px}
+@keyframes termRise{from{transform:scaleY(0);transform-origin:bottom;opacity:.3}to{transform:scaleY(1);transform-origin:bottom;opacity:1}}
+.gradeDistribution{height:185px;display:flex;align-items:flex-end;justify-content:center;gap:12px;border-bottom:1px solid #e4ebe6;padding:0 5px}
+.gradeItem{height:100%;flex:1;max-width:42px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.gradeBar{height:125px;width:100%;display:flex;align-items:flex-end;justify-content:center}.gradeBar span{width:70%;border-radius:6px 6px 2px 2px;min-height:8px;box-shadow:0 5px 10px #173c2a12;animation:gradeRise .7s ease both}
+.gradeA .gradeBar span{background:#2f7655}.gradeB .gradeBar span{background:#4d91c9}.gradeC .gradeBar span{background:#d4a13c}.gradeD .gradeBar span{background:#df7b55}.gradeF .gradeBar span{background:#c94f4f}
+.gradeItem b{font-size:10px;color:#315c47;margin-top:5px}.gradeItem strong{font-size:9px;color:#52635a}.gradeItem small{font-size:7px;color:#929d97;margin-top:2px}
+.gradeLegend{display:flex;justify-content:space-between;gap:4px;margin-top:8px;color:#89958f;font-size:7px}
+@keyframes gradeRise{from{transform:scaleY(0);transform-origin:bottom;opacity:.3}to{transform:scaleY(1);transform-origin:bottom;opacity:1}}
+.companyPerformance{display:grid;gap:11px}.companyPerf{padding:9px 10px;border:1px solid #e6ece8;border-radius:9px;background:#fbfdfb;transition:.22s ease}.companyPerf:hover{transform:translateY(-2px);box-shadow:0 7px 15px #173c2a12;background:#fff}
+.companyPerfHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.companyPerfHead b{font-size:10px;color:#315c47}.companyPerfHead strong{font-size:11px;color:#2f7655}
+.companyPerfTrack{height:8px;background:#edf2ee;border-radius:20px;overflow:hidden}.companyPerfTrack span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#2f7655,#73b18b);animation:companyBar .9s ease both}
+.companyPerf:nth-child(2) .companyPerfTrack span{background:linear-gradient(90deg,#3f82ba,#79add5)}.companyPerf:nth-child(3) .companyPerfTrack span{background:linear-gradient(90deg,#c99329,#e2bb61)}.companyPerf:nth-child(4) .companyPerfTrack span{background:linear-gradient(90deg,#c75b5b,#df8a8a)}
+.companyPerf small{display:block;font-size:7px;color:#8a9790;margin-top:5px}@keyframes companyBar{from{width:0!important}to{width:var(--w)}}
+@media(max-width:1000px){.dashboardInsights{grid-template-columns:1fr 1fr}.dashboardInsights .panel:last-child{grid-column:1/-1}}
+@media(max-width:650px){.dashboardInsights{grid-template-columns:1fr}.dashboardInsights .panel:last-child{grid-column:auto}.gradeLegend{font-size:6px}.termLine{height:165px}}
+@media(prefers-reduced-motion:reduce){.termStep>span,.gradeBar span,.companyPerfTrack span{animation:none!important}}
