@@ -249,20 +249,46 @@ function CompanyPerformance({ranked}){
 
 function CompanyOverview({cadets}){
   const icons=["♜","⚔","✥","♞"];
+  const demoNames=["Ahmed Khan","Usman Ali","Hamza Raza","Bilal Ahmed","Hassan Shah","Saad Malik","Ahsan Iqbal","Danish Khan","Talha Asif","Fahad Noor","Zain Abbas","Owais Tariq"];
   const demoCounts={Khalid:60,Tariq:60,Qasim:60,Salahuddin:60};
-  return <Panel title="Company Overview">
+  const [selectedCompany,setSelectedCompany]=useState(null);
+  const getCompanyCadets=company=>{
+    const real=cadets.filter(c=>c.company===company);
+    if(real.length)return real;
+    return Array.from({length:Math.min(6,demoCounts[company])},(_,i)=>({
+      id:"demo-"+company+"-"+i,roll:"D-"+String(i+1).padStart(3,"0"),name:demoNames[(i+COMPANIES.indexOf(company)*3)%demoNames.length],
+      company,platoon:PLATOONS[i%3],term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:82-i,mid:78-i,final:85-i,assign:80-i,speaking:88-i}
+    }));
+  };
+  return <><Panel title="Company Overview">
     <div className="companyOverview">
       {COMPANIES.map((company,i)=>{
         const realCount=cadets.filter(c=>c.company===company).length;
         const count=realCount||demoCounts[company];
-        return <div className={"companyTile companyTile"+i} key={company}>
+        return <button type="button" className={"companyTile companyTile"+i} key={company} onClick={()=>setSelectedCompany(company)}>
           <div className="companyTileIcon">{icons[i]}</div>
           <b>{company}</b>
           <span>{count} Cadets</span>
-        </div>;
+        </button>;
       })}
     </div>
-  </Panel>;
+  </Panel>
+  {selectedCompany&&<CompanyCadetModal company={selectedCompany} cadets={getCompanyCadets(selectedCompany)} onClose={()=>setSelectedCompany(null)}/>}</>;
+}
+
+function CompanyCadetModal({company,cadets,onClose}){
+  return <div className="companyModalOverlay" onClick={onClose}>
+    <div className="companyModal" onClick={e=>e.stopPropagation()}>
+      <div className="companyModalHead"><div><span>COMPANY DETAILS</span><h2>{company} Company</h2><p>{cadets.length} cadets shown</p></div><button className="companyModalClose" onClick={onClose}>×</button></div>
+      <div className="companyCadetGrid">
+        {cadets.map(c=><div className="companyCadetCard" key={c.id}>
+          <div className="avatar small">{c.name[0]}</div>
+          <div className="companyCadetInfo"><b>{c.name}</b><small>{c.roll}</small><small>{c.platoon} Platoon · {c.term}</small></div>
+          <strong>{pct(c.marks||{}).toFixed(1)}%</strong>
+        </div>)}
+      </div>
+    </div>
+  </div>;
 }
 
 function PassFailChart({ranked,onLoadDemo}){
