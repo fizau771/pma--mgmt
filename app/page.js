@@ -208,7 +208,7 @@ function ResultGraph({ranked,scope,company,platoon}){
           <div className="gridLines"><i/><i/><i/><i/><i/></div>
           <div className="bars groupedBars">{data.map((d,i)=><button className={"chartBar "+(selected===i?"chosen":"")} key={i} title={d.group+" · "+d.label+" · "+d.value.toFixed(2)+"%"} onClick={()=>setSelected(selected===i?null:i)}>
             <span className="barValue">{d.value.toFixed(1)}%</span>
-            <span className={"barFill companyColor-"+(COMPANIES.indexOf(d.group)+1)}/>
+            <span className={"barFill companyColor-"+(COMPANIES.indexOf(d.group)+1)} style={{height:Math.min(100,Math.max(0,d.value))+"%"}}/>
             <small>{d.label}</small>
             <em>{d.group}</em>
           </button>)}</div>
