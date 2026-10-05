@@ -194,7 +194,40 @@ function Dashboard({cadets,ranked,setTab}){
   return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Manage cadets, term courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div>
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><Card n={avg.toFixed(1)+"%"} t="Average Result" icon="◈"/><Card n={ranked[0]?.percentage?.toFixed(1)||"0"} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.overallPosition}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
+    <PassFailChart ranked={ranked}/>
   </>;
+}
+
+function PassFailChart({ranked}){
+  const [scope,setScope]=useState("company");
+  const groups=scope==="company"?COMPANIES:PLATOONS;
+  const data=groups.map(group=>{
+    const list=ranked.filter(c=>scope==="company"?c.company===group:c.platoon===group);
+    const pass=list.filter(c=>c.percentage>=50).length;
+    return {label:scope==="platoon"?group+" Platoon":group,pass,fail:list.length-pass,total:list.length};
+  });
+  const max=Math.max(1,...data.map(x=>Math.max(x.pass,x.fail)));
+  const tick=Math.max(1,Math.ceil(max/4));
+  const ticks=[tick*4,tick*3,tick*2,tick,0];
+  return <Panel title="Pass & Fail Cadets" icon="▥">
+    <div className="passFailHead"><div><b>Cadet Performance Distribution</b><span>Pass: 50% and above · Fail: below 50%</span></div><div className="scopeTabs"><button className={scope==="company"?"selected":""} onClick={()=>setScope("company")}>Company Wise</button><button className={scope==="platoon"?"selected":""} onClick={()=>setScope("platoon")}>Platoon Wise</button></div></div>
+    <div className="passFailChart">
+      <div className="passFailAxis">{ticks.map((t,i)=><span key={i}>{t}</span>)}</div>
+      <div className="passFailPlot">
+        <div className="passFailGrid">{ticks.map((t,i)=><i key={i} style={{bottom:(i/(ticks.length-1))*100+"%"}}/>)}</div>
+        <div className="passFailGroups">
+          {data.map((d,i)=><div className="passFailGroup" key={d.label}>
+            <div className="passFailBars">
+              <div className="passFailBar passBar" style={{height:(d.pass/max*100)+"%"}}><b>{d.pass}</b></div>
+              <div className="passFailBar failBar" style={{height:(d.fail/max*100)+"%"}}><b>{d.fail}</b></div>
+            </div>
+            <small>{d.label}</small>
+          </div>)}
+        </div>
+      </div>
+    </div>
+    <div className="passFailLegend"><span><i className="passDot"/>Pass</span><span><i className="failDot"/>Fail</span><strong>{ranked.length} active cadets</strong></div>
+  </Panel>;
 }
 function Card({n,t,icon}){return <div className="card"><div className="cardIcon">{icon}</div><div><b>{n}</b><span>{t}</span></div></div>}
 function Panel({title,icon,children}){return <div className="panel"><div className="panelHead"><h2>{icon&&<i>{icon}</i>}{title}</h2></div>{children}</div>}
