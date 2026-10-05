@@ -166,3 +166,16 @@
 @media(prefers-reduced-motion:reduce){
   .dashboardInsights>.panel,.termStep,.gradeItem,.termStep>span,.gradeBar span{animation:none!important;transition:none!important}
 }
+
+.companyTile{border:0;font:inherit;cursor:pointer}
+.companyModalOverlay{position:fixed;inset:0;background:rgba(14,35,25,.48);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:22px;z-index:1000;animation:companyOverlayIn .22s ease both}
+.companyModal{width:min(760px,94vw);max-height:82vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 28px 70px rgba(10,35,22,.3);animation:companyModalIn .3s cubic-bezier(.22,.61,.36,1) both}
+.companyModalHead{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #e6ece8;background:linear-gradient(135deg,#f4faf6,#fff)}
+.companyModalHead span{font-size:8px;letter-spacing:1.3px;font-weight:800;color:#2f7655}.companyModalHead h2{margin:4px 0 2px;font-size:20px;color:#254b39}.companyModalHead p{margin:0;font-size:9px;color:#839089}
+.companyModalClose{border:0;background:#edf5ef;color:#315c47;width:30px;height:30px;border-radius:50%;font-size:20px;cursor:pointer;transition:.2s}.companyModalClose:hover{transform:rotate(90deg) scale(1.08);background:#dceee2}
+.companyCadetGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px}
+.companyCadetCard{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #e5ebe7;border-radius:10px;background:#fbfdfb;transition:.2s;animation:cadetPopupIn .35s ease both}
+.companyCadetCard:hover{transform:translateY(-3px);box-shadow:0 9px 18px rgba(23,60,42,.12);border-color:#b9d5c3}
+.companyCadetInfo{min-width:0;display:flex;flex-direction:column;gap:2px;flex:1}.companyCadetInfo b{font-size:10px;color:#315c47}.companyCadetInfo small{font-size:7px;color:#87938d}.companyCadetCard>strong{font-size:10px;color:#2f7655}
+@keyframes companyOverlayIn{from{opacity:0}to{opacity:1}}@keyframes companyModalIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}@keyframes cadetPopupIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:650px){.companyCadetGrid{grid-template-columns:1fr}.companyModalHead{padding:15px}.companyModal{max-height:88vh}}
