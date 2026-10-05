@@ -177,17 +177,16 @@ function PositionRow({c,all}){
 function ResultGraph({ranked,scope,company,platoon}){
   const [selected,setSelected]=useState(null);
   let data=[];
-  if(scope==="overall")data=ranked.slice(0,7).map(c=>({label:c.name,sub:c.roll+" · "+c.company+" · "+c.platoon+" Platoon",value:c.percentage}));
-  if(scope==="company")data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co&&(platoon==="All"||c.platoon===platoon));return x.length?{label:co,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
-  if(scope==="platoon")data=PLATOONS.map(pl=>{const x=ranked.filter(c=>c.platoon===pl&&(company==="All"||c.company===company));return x.length?{label:pl+" Platoon",sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
+  if(scope==="overall")data=ranked.slice(0,7).map(c=>({label:c.name,value:c.percentage}));
+  if(scope==="company")data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co&&(platoon==="All"||c.platoon===platoon));return x.length?{label:co,value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
+  if(scope==="platoon")data=PLATOONS.map(pl=>{const x=ranked.filter(c=>c.platoon===pl&&(company==="All"||c.company===company));return x.length?{label:pl+" Platoon",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}:null}).filter(Boolean);
   const total=data.reduce((s,d)=>s+d.value,0),colors=["#4779ee","#ed7b18","#ef3f68","#d51aa0","#b13bb9","#8b55c9","#6d5ac7"];
   let angle=-90;const cx=145,cy=145,r=128;
   const pt=a=>{const q=a*Math.PI/180;return[cx+r*Math.cos(q),cy+r*Math.sin(q)]};
-  const slices=data.map((d,i)=>{const st=angle,sw=total?d.value/total*360:0;angle+=sw;const [x1,y1]=pt(st),[x2,y2]=pt(angle),mid=st+sw/2,q=mid*Math.PI/180;return{...d,i,color:colors[i%colors.length],path:"M "+cx+" "+cy+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+(sw>180?1:0)+" 1 "+x2+" "+y2+" Z",lx:cx+78*Math.cos(q),ly:cy+78*Math.sin(q)}});
-  return <div className="pieChartWrap">{data.length?<div className="pieExampleLayout"><div className="pieGraphic"><svg viewBox="0 0 290 290" className="pieSvg largePie">
+  const slices=data.map((d,i)=>{const st=angle,sw=total?d.value/total*360:0;angle+=sw;const [x1,y1]=pt(st),[x2,y2]=pt(angle);return{...d,i,color:colors[i%colors.length],path:"M "+cx+" "+cy+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+(sw>180?1:0)+" 1 "+x2+" "+y2+" Z"}});
+  return <div className="pieChartWrap"><div className="pieOnly"><svg viewBox="0 0 290 290" className="pieSvg largePie" role="img" aria-label="Percentage results pie chart">
     {slices.map(s=><path key={s.i} d={s.path} fill={s.color} className={selected===s.i?"pieSlice selected":"pieSlice"} onClick={()=>setSelected(selected===s.i?null:s.i)} onMouseEnter={()=>setSelected(s.i)} onMouseLeave={()=>setSelected(null)}/>)}
-    {slices.map(s=><g key={"t"+s.i} className="pieText"><text x={s.lx} y={s.ly-3} textAnchor="middle">{s.label.length>14?s.label.slice(0,13)+"…":s.label}</text><text x={s.lx} y={s.ly+13} textAnchor="middle" className="piePercent">{s.value.toFixed(1)}%</text></g>)}
-  </svg></div><div className="pieExampleLegend"><h3>{scope==="overall"?"Percentage Results":scope==="company"?"Company Results":"Platoon Results"}</h3>{slices.map(s=><button key={s.i} className={selected===s.i?"pieLegendItem active":"pieLegendItem"} onClick={()=>setSelected(selected===s.i?null:s.i)}><i style={{background:s.color}}/><span><b>{s.label}</b><small>{s.sub}</small></span><strong>{s.value.toFixed(1)}%</strong></button>)}</div></div>:<Empty text="No result data for this selection."/>}</div>
+  </svg>{selected!==null&&data[selected]&&<div className="pieTooltip">{data[selected].label}: {data[selected].value.toFixed(2)}%</div>}</div></div>
 }
 function Dashboard({cadets,ranked,setTab}){
   const avg=cadets.length?cadets.reduce((s,c)=>s+pct(c.marks||{}),0)/cadets.length:0;
