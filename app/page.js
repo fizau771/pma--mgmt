@@ -133,7 +133,7 @@ export default function App(){
   const pageTitle=nav.find(n=>n[0]===tab)?.[2];
 
   return <main>
-    <aside><div className="brand"><div className="brandMark"><img src="/PMA_Kakul_logo.png" alt="PMA logo"/></div><div><b>PMA</b><span>CADET MANAGEMENT</span></div></div>
+    <aside><div className="brand"><div className="brandMark"><img src="/PMA_Kakul_logo.png" alt="PMA logo"/></div><div className="brandName">CADET ACADEMIC TRACKING SYSTEM</div></div>
       <div className="navLabel">MAIN MENU</div>{nav.map(([x,icon,label])=><button className={tab===x?"nav active":"nav"} onClick={()=>setTab(x)} key={x}><i>{icon}</i>{label}<em>{tab===x?"•":""}</em></button>)}
       <div className="sidebarBottom"><div className="userMini"><div className="avatar">A</div><div><b>Administrator</b><small>System Admin</small></div></div><button className="logout" onClick={()=>setLogin(false)}>↪ Logout</button></div>
     </aside>
