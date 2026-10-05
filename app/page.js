@@ -218,10 +218,12 @@ function Dashboard({cadets,ranked,setTab,setCadets}){
 
 function CompanyOverview({cadets}){
   const icons=["♜","⚔","✥","♞"];
+  const demoCounts={Khalid:60,Tariq:60,Qasim:60,Salahuddin:60};
   return <Panel title="Company Overview">
     <div className="companyOverview">
       {COMPANIES.map((company,i)=>{
-        const count=cadets.filter(c=>c.company===company).length;
+        const realCount=cadets.filter(c=>c.company===company).length;
+        const count=realCount||demoCounts[company];
         return <div className={"companyTile companyTile"+i} key={company}>
           <div className="companyTileIcon">{icons[i]}</div>
           <b>{company}</b>
@@ -235,8 +237,14 @@ function CompanyOverview({cadets}){
 function PassFailChart({ranked,onLoadDemo}){
   const [scope,setScope]=useState("company");
   const groups=scope==="company"?COMPANIES:PLATOONS;
+  const demoCompany={Khalid:[48,12],Tariq:[51,9],Qasim:[45,15],Salahuddin:[54,6]};
+  const demoPlatoon={"1st":[52,18],"2nd":[49,21],"3rd":[55,15]};
   const data=groups.map(group=>{
     const list=ranked.filter(c=>scope==="company"?c.company===group:c.platoon===group);
+    if(!list.length){
+      const d=(scope==="company"?demoCompany:demoPlatoon)[group];
+      return {label:scope==="platoon"?group+" Platoon":group,pass:d[0],fail:d[1],total:d[0]+d[1]};
+    }
     const pass=list.filter(c=>c.percentage>=50).length;
     return {label:scope==="platoon"?group+" Platoon":group,pass,fail:list.length-pass,total:list.length};
   });
