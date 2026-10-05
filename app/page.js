@@ -196,24 +196,55 @@ function Dashboard({cadets,ranked,setTab,setCadets}){
     const demo=[];
     COMPANIES.forEach((company,ci)=>{
       for(let j=0;j<5;j++){
-        const n=names[ci*5+j];
-        const pass=j<3;
+        const n=names[ci*5+j],pass=j<3;
         const base=pass?62+(j*8)+(ci*2):25+((j-3)*7)+(ci*2);
         const marks={quiz:base+3,mid:base-2,final:base+4,assign:base+1,speaking:base+5};
         demo.push({id:Date.now()+ci*10+j+1,roll:"D-"+(ci*5+j+1).toString().padStart(3,"0"),name:n,company,platoon:PLATOONS[(ci+j)%3],term:"1st Term",courses:["Military Orientation","Drill"],marks});
       }
     });
-    setCadets(cs=>{
-      const existing=new Set(cs.map(c=>c.roll));
-      return [...demo.filter(c=>!existing.has(c.roll)),...cs];
-    });
+    setCadets(cs=>{const existing=new Set(cs.map(c=>c.roll));return [...demo.filter(c=>!existing.has(c.roll)),...cs]});
   }
   return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Manage cadets, term courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div>
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><ProgressCard value={avg} t="Average Result" icon="◈"/><ProgressCard value={ranked[0]?.percentage||0} t="Highest Result" icon="★"/></div>
-    <div className="dashGrid"><Panel title="Top Results" icon="★">{ranked.slice(0,5).map(c=><div className="rankRow compact" key={c.id}><div className="rank">#{c.overallPosition}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(2)}%</strong></div>)}</Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
+    <div className="dashGrid"><Panel title="Top Results" icon="★"><TopThree ranked={ranked}/></Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
+    <DashboardInsights ranked={ranked}/>
     <PassFailChart ranked={ranked} onLoadDemo={loadDemoData}/>
     <CompanyOverview cadets={ranked}/>
   </>;
+}
+
+function TopThree({ranked}){
+  const demo=[{name:"Ahmed Khan",roll:"D-001",company:"Khalid",percentage:92.4},{name:"Usman Ali",roll:"D-002",company:"Tariq",percentage:89.7},{name:"Hamza Raza",roll:"D-003",company:"Salahuddin",percentage:87.9}];
+  const data=ranked.length?ranked.slice(0,3).map(c=>({name:c.name,roll:c.roll,company:c.company,percentage:c.percentage})):demo;
+  return <div className="topThree">{data.map((c,i)=><div className={"topThreeRow place"+(i+1)} key={c.roll||i}><div className="medal">{["🥇","🥈","🥉"][i]}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(1)}%</strong></div>)}</div>;
+}
+
+function DashboardInsights({ranked}){
+  return <div className="dashboardInsights">
+    <TermPerformance ranked={ranked}/>
+    <GradeDistribution ranked={ranked}/>
+    <CompanyPerformance ranked={ranked}/>
+  </div>;
+}
+
+function TermPerformance({ranked}){
+  const demo=[78.2,74.6,81.4,86.8];
+  const data=TERMS.map((term,i)=>{const x=ranked.filter(c=>c.term===term);return x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:demo[i]});
+  return <Panel title="Term Performance" icon="◈"><div className="termPerformance"><div className="termLine">{data.map((v,i)=><div className="termStep" key={TERMS[i]}><div className="termDot">{i+1}</div><b>{TERMS[i]}</b><strong>{v.toFixed(1)}%</strong><span style={{height:Math.max(18,v)+"%"}}/></div>)}</div><div className="termArrow">1st → 2nd → 3rd → 4th Term</div></div></Panel>;
+}
+
+function GradeDistribution({ranked}){
+  const demo={A:32,B:45,C:27,D:10,F:6};
+  const counts=ranked.length?["A","B","C","D","F"].reduce((o,g)=>{o[g]=ranked.filter(c=>grade(c.percentage)===g).length;return o},{}):demo;
+  const total=Object.values(counts).reduce((a,b)=>a+b,0)||1;
+  return <Panel title="Grade Distribution" icon="★"><div className="gradeDistribution">{["A","B","C","D","F"].map(g=><div className={"gradeItem grade"+g} key={g}><div className="gradeBar"><span style={{height:Math.max(8,counts[g]/total*100)+"%"}}/></div><b>{g}</b><strong>{counts[g]}</strong><small>{Math.round(counts[g]/total*100)}%</small></div>)}</div><div className="gradeLegend"><span>Excellent</span><span>Good</span><span>Average</span><span>Needs Attention</span></div></Panel>;
+}
+
+function CompanyPerformance({ranked}){
+  const demo={Khalid:82.4,Tariq:76.8,Qasim:71.5,Salahuddin:85.9};
+  const data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co);return {company:co,value:x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:demo[co]}});
+  const best=Math.max(...data.map(x=>x.value));
+  return <Panel title="Company Performance Comparison" icon="⚔"><div className="companyPerformance">{data.map((x,i)=><div className="companyPerf" key={x.company}><div className="companyPerfHead"><b>{x.company}</b><strong>{x.value.toFixed(1)}%</strong></div><div className="companyPerfTrack"><span style={{width:x.value+"%"}}/></div><small>{x.value===best?"★ Best performing company":"Average academic performance"}</small></div>)}</div></Panel>;
 }
 
 function CompanyOverview({cadets}){
