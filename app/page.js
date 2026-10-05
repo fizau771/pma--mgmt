@@ -3,8 +3,8 @@ import {useEffect,useMemo,useState} from "react";
 import * as XLSX from "xlsx";
 
 const TERMS=["1st Term","2nd Term","3rd Term","4th Term"];
-const COMPANIES=["Alpha","Bravo","Charlie","Delta"];
-const PLATOONS=["1st","2nd","3rd","4th"];
+const COMPANIES=["Khalid","Tariq","Qasim","Salahuddin"];
+const PLATOONS=["1st","2nd","3rd"];
 const TERM_COURSES={
   "1st Term":["Military Orientation","Drill","Physical Training","Map Reading","Military History"],
   "2nd Term":["Tactics I","Weapons Training","Field Craft","Leadership I","Physical Training II"],
@@ -12,7 +12,7 @@ const TERM_COURSES={
   "4th Term":["Advanced Tactics","Command & Staff","Military Administration","Leadership III","Final Exercise"]
 };
 const seed=[
-  {id:1,roll:"24-001",name:"Ali Ahmed",company:"Alpha",platoon:"1st",term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:91,mid:82,final:88,assign:86}}
+  {id:1,roll:"24-001",name:"Ali Ahmed",company:"Khalid",platoon:"1st",term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:91,mid:82,final:88,assign:86}}
 ];
 const pct=m=>Math.round(((+m.quiz||0)*.2+(+m.mid||0)*.25+(+m.final||0)*.35+(+m.assign||0)*.2)*100)/100;
 const clean=v=>String(v??"").trim();
@@ -177,36 +177,47 @@ function PositionRow({c,all}){
 function ResultGraph({ranked,scope,company,platoon}){
   const [selected,setSelected]=useState(null);
   let data=[];
-  if(scope==="overall") data=ranked.map(c=>({label:c.name,sub:c.roll,value:c.percentage})).slice(0,10);
+  if(scope==="overall"){
+    data=ranked.slice(0,10).map(c=>({label:c.name,group:"Top 10 Cadets",sub:c.roll+" · "+c.company+" · "+c.platoon+" Platoon",value:c.percentage}));
+  }
   if(scope==="company"){
-    const groups=COMPANIES.map(g=>ranked.filter(c=>c.company===g)).filter(x=>x.length).map(x=>({label:x[0].company,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length}));
-    data=groups;
+    for(const co of COMPANIES){
+      for(const pl of PLATOONS){
+        const x=ranked.filter(c=>c.company===co&&c.platoon===pl);
+        if(x.length)data.push({label:pl+" Platoon",group:co,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length});
+      }
+    }
+    if(company!=="All")data=data.filter(x=>x.group===company);
+    if(platoon!=="All")data=data.filter(x=>x.label===platoon+" Platoon");
   }
   if(scope==="platoon"){
-    const groups=[];
-    for(const co of COMPANIES)for(const pl of PLATOONS){
-      const x=ranked.filter(c=>c.company===co&&c.platoon===pl);
-      if(x.length)groups.push({label:co+" / "+pl,sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length});
+    for(const pl of PLATOONS){
+      for(const co of COMPANIES){
+        const x=ranked.filter(c=>c.company===co&&c.platoon===pl);
+        if(x.length)data.push({label:co,group:pl+" Platoon",sub:x.length+" cadets",value:x.reduce((s,c)=>s+c.percentage,0)/x.length});
+      }
     }
-    data=groups;
+    if(company!=="All")data=data.filter(x=>x.label===company);
+    if(platoon!=="All")data=data.filter(x=>x.group===platoon+" Platoon");
   }
-  if(company!=="All"&&scope!=="overall")data=data.filter(x=>x.label.startsWith(company));
-  if(platoon!=="All"&&scope==="platoon")data=data.filter(x=>x.label.endsWith(platoon));
-  const max=Math.max(100,...data.map(d=>d.value));
   return <div className="barChartWrap">
-    {data.length?<><div className="barChart">
-      <div className="yAxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
-      <div className="barsArea">
-        <div className="gridLines"><i/><i/><i/><i/><i/></div>
-        <div className="bars">{data.map((d,i)=><button className={"chartBar "+(selected===i?"chosen":"")} key={i} title={d.label+" · "+d.value.toFixed(1)+"%"} onClick={()=>setSelected(selected===i?null:i)}>
-          <span className="barValue">{d.value.toFixed(1)}%</span>
-          <span className="barFill" style={{height:Math.min(100,(d.value/max)*100)+"%"}}/>
-          <small>{d.label}</small>
-        </button>)}</div>
+    {data.length?<><div className="chartTitleLine"><b>{scope==="overall"?"Top Cadet Percentages":scope==="company"?"Company & Platoon Average Percentages":"Platoon & Company Average Percentages"}</b><span>Percentage marks</span></div>
+      <div className="barChart">
+        <div className="yAxis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+        <div className="barsArea">
+          <div className="gridLines"><i/><i/><i/><i/><i/></div>
+          <div className="bars groupedBars">{data.map((d,i)=><button className={"chartBar "+(selected===i?"chosen":"")} key={i} title={d.group+" · "+d.label+" · "+d.value.toFixed(2)+"%"} onClick={()=>setSelected(selected===i?null:i)}>
+            <span className="barValue">{d.value.toFixed(1)}%</span>
+            <span className={"barFill companyColor-"+(COMPANIES.indexOf(d.group)+1)}/>
+            <small>{d.label}</small>
+            <em>{d.group}</em>
+          </button>)}</div>
+        </div>
       </div>
-    </div>
-    {selected!==null&&data[selected]&&<div className="chartInfo"><b>{data[selected].label}</b><span>{data[selected].sub}</span><strong>{data[selected].value.toFixed(2)}%</strong><button onClick={()=>setSelected(null)}>×</button></div>}
-    <div className="chartHint">Click any bar to view its result.</div></>:<Empty text="No result data for this selection."/>}
+      {selected!==null&&data[selected]&&<div className="chartInfo"><b>{data[selected].group}</b><span>{data[selected].label} · {data[selected].sub}</span><strong>{data[selected].value.toFixed(2)}%</strong><button onClick={()=>setSelected(null)}>×</button></div>}
+      <div className="chartLegend">{COMPANIES.map((x,i)=><span key={x}><i className={"legendDot companyColor-"+(i+1)}/>{x}</span>)}</div>
+      <div className="chartHint">Click any bar to inspect its percentage.</div>
+    </>:<Empty text="No result data for this selection."/>}
   </div>
 }
 function Dashboard({cadets,ranked,setTab}){
