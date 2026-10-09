@@ -3,20 +3,20 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model Cadet {
-  id        String   @id @default(cuid())
-  roll      String   @unique
-  name      String
-  company   String
-  platoon   String
-  term      String?
-  courses   Json     @default("[]")
-  marks     Json     @default("{}")
-  status    String?
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  roll      String   @unique @db.VarChar(191)
+  name      String   @db.VarChar(191)
+  company   String   @db.VarChar(191)
+  platoon   String   @db.VarChar(191)
+  term      String?  @db.VarChar(191)
+  courses   Json
+  marks     Json
+  status    String?  @db.VarChar(191)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
