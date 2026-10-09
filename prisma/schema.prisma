@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cadet {
+  id        String   @id @default(cuid())
+  roll      String   @unique
+  name      String
+  company   String
+  platoon   String
+  term      String?
+  courses   Json     @default("[]")
+  marks     Json     @default("{}")
+  status    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([company, platoon, term])
+  @@index([status])
+}
