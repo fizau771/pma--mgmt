@@ -11,9 +11,6 @@ const TERM_COURSES={
   "3rd Term":["Tactics II","Military Law","Leadership II","Navigation","Signals"],
   "4th Term":["Advanced Tactics","Command & Staff","Military Administration","Leadership III","Final Exercise"]
 };
-const seed=[
-  {id:1,roll:"24-001",name:"Ali Ahmed",company:"Khalid",platoon:"1st",term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:91,mid:82,final:88,assign:86,speaking:90}}
-];
 const pct=m=>Math.round(((+m.quiz||0)*.2+(+m.mid||0)*.25+(+m.final||0)*.35+(+m.assign||0)*.15+(+m.speaking||0)*.05)*100)/100;
 const grade=p=>p>=80?"A":p>=70?"B":p>=60?"C":p>=50?"D":"F";
 const clean=v=>String(v??"").trim();
@@ -22,18 +19,39 @@ const field=(row,names)=>{for(const n of names){const k=Object.keys(row).find(x=
 
 export default function App(){
   const [login,setLogin]=useState(false),[u,setU]=useState(""),[p,setP]=useState("");
-  const [cadets,setCadets]=useState(seed),[tab,setTab]=useState("dashboard"),[notice,setNotice]=useState("");
+  const [cadets,setCadets]=useState([]),[tab,setTab]=useState("dashboard"),[notice,setNotice]=useState("");
+  const [dataReady,setDataReady]=useState(false),[backendError,setBackendError]=useState("");
   const [cadetQ,setCadetQ]=useState(""),[cadetCompany,setCadetCompany]=useState("All"),[cadetPlatoon,setCadetPlatoon]=useState("All"),[cadetTerm,setCadetTerm]=useState("All");
   const [markQ,setMarkQ]=useState(""),[markCompany,setMarkCompany]=useState("All"),[markPlatoon,setMarkPlatoon]=useState("All");
   const [courseCompany,setCourseCompany]=useState("All"),[coursePlatoon,setCoursePlatoon]=useState("All"),[courseTerm,setCourseTerm]=useState("1st Term");
   const [resultCompany,setResultCompany]=useState("All"),[resultPlatoon,setResultPlatoon]=useState("All"),[graphScope,setGraphScope]=useState("overall");
-  const [form,setForm]=useState({roll:"",name:"",company:"Alpha",platoon:"1st",term:"1st Term"});
+  const [form,setForm]=useState({roll:"",name:"",company:"Khalid",platoon:"1st",term:"1st Term"});
   const [mid,setMid]=useState(null),[marks,setMarks]=useState({quiz:0,mid:0,final:0,assign:0});
   const [courseCadet,setCourseCadet]=useState(null),[selectedCourses,setSelectedCourses]=useState([]);
   const [excelBusy,setExcelBusy]=useState(false);
 
-  useEffect(()=>{try{const x=localStorage.getItem("pma-cadets-v9");if(x)setCadets(JSON.parse(x))}catch{}},[]);
-  useEffect(()=>{if(login)localStorage.setItem("pma-cadets-v9",JSON.stringify(cadets))},[cadets,login]);
+  useEffect(()=>{
+    if(!login)return;
+    let cancelled=false;
+    setDataReady(false);
+    fetch("/api/cadets",{cache:"no-store"}).then(async r=>{
+      if(!r.ok)throw new Error(r.status===401?"Your session expired. Please sign in again.":"Could not fetch cadets from the database.");
+      return r.json();
+    }).then(data=>{if(!cancelled){setCadets(Array.isArray(data.cadets)?data.cadets:[]);setBackendError("");setDataReady(true)}})
+      .catch(err=>{if(!cancelled){setBackendError(err.message||"Backend connection failed.");setDataReady(false)}});
+    return ()=>{cancelled=true};
+  },[login]);
+  useEffect(()=>{
+    if(!login||!dataReady)return;
+    const timer=setTimeout(async()=>{
+      try{
+        const r=await fetch("/api/cadets",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cadets})});
+        if(!r.ok)throw new Error("Database save failed.");
+        setBackendError("");
+      }catch(err){setBackendError(err.message||"Could not save to database.");}
+    },350);
+    return ()=>clearTimeout(timer);
+  },[cadets,login,dataReady]);
 
   const activeCadets=useMemo(()=>cadets.filter(c=>c.status!=="relegated"),[cadets]);
   const relegatedCadets=useMemo(()=>cadets.filter(c=>c.status==="relegated"),[cadets]);
@@ -62,7 +80,17 @@ export default function App(){
   const resultFiltered=ranked.filter(c=>(resultCompany==="All"||c.company===resultCompany)&&(resultPlatoon==="All"||c.platoon===resultPlatoon));
 
   const msg=x=>{setNotice(x);setTimeout(()=>setNotice(""),3000)};
-  function signin(e){e.preventDefault();if(u==="admin"&&p==="PMA@123")setLogin(true);else alert("Invalid login. Use admin / PMA@123");}
+  async function signin(e){
+    e.preventDefault();
+    try{
+      const r=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});
+      if(!r.ok)throw new Error("Sign in failed. Check the administrator credentials configured by IT.");
+      setLogin(true);setP("");
+    }catch(err){alert(err.message||"Unable to connect to the authentication service.");}
+  }
+  async function signout(){
+    try{await fetch("/api/auth",{method:"DELETE"});}finally{setLogin(false);setDataReady(false);setCadets([]);}
+  }
   function add(e){
     e.preventDefault();
     if(!form.name.trim()||!form.roll.trim())return msg("Enter roll number and cadet name.");
@@ -108,13 +136,13 @@ export default function App(){
       for(const row of rows){
         const roll=field(row,["Roll Number","Roll No","Roll","Cadet Number","Cadet No","Cadet Number"]);
         const name=field(row,["Cadet Name","Name","Full Name"]);
-        const company=field(row,["Company"])||"Alpha";
+        const company=field(row,["Company"])||"Khalid";
         const platoon=field(row,["Platoon"])||"1st";
         let term=field(row,["Term","Current Term"])||"1st Term";
         const termMatch=TERMS.find(t=>norm(t)===norm(term))||TERMS.find(t=>norm(t).startsWith(norm(term)));
         term=termMatch||"1st Term";
         if(!roll||!name)continue;
-        imported.push({id:Date.now()+imported.length,roll,name,company:COMPANIES.includes(company)?company:"Alpha",platoon:PLATOONS.includes(platoon)?platoon:"1st",term,courses:[],marks:{quiz:0,mid:0,final:0,assign:0}});
+        imported.push({id:Date.now()+imported.length,roll,name,company:COMPANIES.includes(company)?company:"Khalid",platoon:PLATOONS.includes(platoon)?platoon:"1st",term,courses:[],marks:{quiz:0,mid:0,final:0,assign:0}});
       }
       const existing=new Set(cadets.map(c=>c.roll.toLowerCase()));
       const fresh=imported.filter(c=>!existing.has(c.roll.toLowerCase()));
@@ -127,7 +155,7 @@ export default function App(){
   if(!login)return <div className="login"><div className="loginGlow"/><form onSubmit={signin} className="loginCard">
     <div className="crest"><img src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div><div className="eyebrow">PAKISTAN MILITARY ACADEMY</div><h1>Cadet Academic Tracking System</h1>
     <p>Secure academic administration portal</p><input placeholder="Username" value={u} onChange={e=>setU(e.target.value)}/><input type="password" placeholder="Password" value={p} onChange={e=>setP(e.target.value)}/>
-    <button className="primary wide">Sign In <span>→</span></button><small>Demo access: <b>admin</b> / <b>PMA@123</b></small>
+    <button className="primary wide">Sign In <span>→</span></button><small>Use the administrator account configured by PMA IT.</small>
   </form></div>;
 
   const nav=[["dashboard","⌂","Dashboard"],["cadets","♙","Cadet Register"],["courses","▣","Course Assignment"],["marks","✎","Results & Exams"],["results","◈","Results"]];
@@ -136,12 +164,12 @@ export default function App(){
   return <main>
     <aside><div className="brand"><div className="brandMark"><img src="/PMA_Kakul_logo.png" alt="PMA logo"/></div><div className="brandName">CADET ACADEMIC TRACKING SYSTEM</div></div>
       <div className="navLabel">MAIN MENU</div>{nav.map(([x,icon,label])=><button className={tab===x?"nav active":"nav"} onClick={()=>setTab(x)} key={x}><i>{icon}</i>{label}<em>{tab===x?"•":""}</em></button>)}
-      <div className="sidebarBottom"><div className="userMini"><div className="avatar">A</div><div><b>Administrator</b><small>System Admin</small></div></div><button className="logout" onClick={()=>setLogin(false)}>↪ Logout</button></div>
+      <div className="sidebarBottom"><div className="userMini"><div className="avatar">A</div><div><b>Administrator</b><small>System Admin</small></div></div><button className="logout" onClick={signout}>↪ Logout</button></div>
     </aside>
     <section className="content"><header><div><div className="crumb">PMA / <b>{pageTitle}</b></div><h1>{pageTitle}</h1><p>Pakistan Military Academy · Cadet Management Portal</p></div><div className="status"><span/> System Online</div></header>
-      {notice&&<div className="notice">✓ {notice}</div>}
+      {notice&&<div className="notice">✓ {notice}</div>}{backendError&&<div className="notice backendError">⚠ {backendError}</div>}{login&&!dataReady&&<div className="notice">Connecting to PMA database…</div>}
 
-      {tab==="dashboard"&&<Dashboard cadets={cadets} ranked={ranked} setTab={setTab} setCadets={setCadets}/>}
+      {tab==="dashboard"&&<Dashboard cadets={cadets} ranked={ranked} setTab={setTab}/>}
       {tab==="cadets"&&<><div className="toolbar"><div><h2>Cadet Register</h2><p>Register individually or import an entire Excel sheet.</p></div><div className="toolbarActions"><label className="uploadBtn">{excelBusy?"Reading Excel…":"＋ Import Excel"}<input type="file" accept=".xlsx,.xls,.csv" onChange={importExcel} disabled={excelBusy}/></label></div></div>
         <div className="filterPanel"><div className="filterTitle">Search & Filters</div><div className="filterGrid"><input placeholder="⌕ Search name or cadet number…" value={cadetQ} onChange={e=>setCadetQ(e.target.value)}/><select value={cadetCompany} onChange={e=>setCadetCompany(e.target.value)}><option value="All">All Companies</option>{COMPANIES.map(x=><option key={x}>{x}</option>)}</select><select value={cadetPlatoon} onChange={e=>setCadetPlatoon(e.target.value)}><option value="All">All Platoons</option>{PLATOONS.map(x=><option key={x}>{x} Platoon</option>)}</select><select value={cadetTerm} onChange={e=>setCadetTerm(e.target.value)}><option value="All">All Terms</option>{TERMS.map(x=><option key={x}>{x}</option>)}</select></div></div>
         <div className="two"><Panel title="Register New Cadet" icon="＋"><form onSubmit={add} className="form">
@@ -189,91 +217,51 @@ function ResultGraph({ranked,scope,company,platoon}){
     {slices.map(s=><path key={s.i} d={s.path} fill={s.color} className={selected===s.i?"pieSlice selected":"pieSlice"} onClick={()=>setSelected(selected===s.i?null:s.i)} onMouseEnter={()=>setSelected(s.i)} onMouseLeave={()=>setSelected(null)}/>)}
   </svg>{selected!==null&&data[selected]&&<div className="pieTooltip">{data[selected].label}: {data[selected].value.toFixed(2)}%</div>}</div></div>
 }
-function Dashboard({cadets,ranked,setTab,setCadets}){
+function Dashboard({cadets,ranked,setTab}){
   const avg=cadets.length?cadets.reduce((s,c)=>s+pct(c.marks||{}),0)/cadets.length:0;
-  function loadDemoData(){
-    const names=["Ahmed Khan","Usman Ali","Hamza Raza","Bilal Ahmed","Hassan Shah","Saad Malik","Ahsan Iqbal","Danish Khan","Talha Asif","Fahad Noor","Zain Abbas","Owais Tariq","Muneeb Akram","Rayan Ahmed","Shahzaib Khan","Waleed Hussain","Haris Javed","Salman Riaz","Abdullah Farooq","Arham Nadeem"];
-    const demo=[];
-    COMPANIES.forEach((company,ci)=>{
-      for(let j=0;j<5;j++){
-        const n=names[ci*5+j],pass=j<3;
-        const base=pass?62+(j*8)+(ci*2):25+((j-3)*7)+(ci*2);
-        const marks={quiz:base+3,mid:base-2,final:base+4,assign:base+1,speaking:base+5};
-        demo.push({id:Date.now()+ci*10+j+1,roll:"D-"+(ci*5+j+1).toString().padStart(3,"0"),name:n,company,platoon:PLATOONS[(ci+j)%3],term:"1st Term",courses:["Military Orientation","Drill"],marks});
-      }
-    });
-    setCadets(cs=>{const existing=new Set(cs.map(c=>c.roll));return [...demo.filter(c=>!existing.has(c.roll)),...cs]});
-  }
   return <><div className="hero"><div><span className="heroTag">ACADEMIC COMMAND CENTER</span><h2>Welcome back, Administrator.</h2><p>Manage cadets, term courses and academic performance from one place.</p><button className="primary" onClick={()=>setTab("cadets")}>Manage Cadets <span>→</span></button></div><img className="heroShield" src="/PMA_Kakul_logo.png" alt="Pakistan Military Academy logo"/></div>
     <div className="cards"><Card n={cadets.length} t="Registered Cadets" icon="♙"/><Card n={cadets.filter(c=>(c.courses||[]).length>0).length} t="With Courses" icon="▣"/><ProgressCard value={avg} t="Average Result" icon="◈"/><ProgressCard value={ranked[0]?.percentage||0} t="Highest Result" icon="★"/></div>
     <div className="dashGrid"><Panel title="Top Results" icon="★"><TopThree ranked={ranked}/></Panel><Panel title="Quick Actions" icon="⚡"><div className="quick"><button onClick={()=>setTab("cadets")}><b>♙</b> Register Cadet <span>→</span></button><button onClick={()=>setTab("courses")}><b>▣</b> Assign Courses <span>→</span></button><button onClick={()=>setTab("marks")}><b>✎</b> Enter Exam Marks <span>→</span></button><button onClick={()=>setTab("results")}><b>◈</b> View Positions & Graphs <span>→</span></button></div></Panel></div>
     <DashboardInsights ranked={ranked}/>
-    <PassFailChart ranked={ranked} onLoadDemo={loadDemoData}/>
+    <PassFailChart ranked={ranked}/>
     <CompanyOverview cadets={ranked}/>
   </>;
 }
 
 function TopThree({ranked}){
-  const demo=[{name:"Ahmed Khan",roll:"D-001",company:"Khalid",percentage:92.4},{name:"Usman Ali",roll:"D-002",company:"Tariq",percentage:89.7},{name:"Hamza Raza",roll:"D-003",company:"Salahuddin",percentage:87.9}];
-  const data=ranked.length?ranked.slice(0,3).map(c=>({name:c.name,roll:c.roll,company:c.company,percentage:c.percentage})):demo;
+  const data=ranked.slice(0,3).map(c=>({name:c.name,roll:c.roll,company:c.company,percentage:c.percentage}));
+  if(!data.length)return <Empty text="Top results will appear after cadets and marks are entered."/>;
   return <div className="topThree">{data.map((c,i)=><div className={"topThreeRow place"+(i+1)} key={c.roll||i}><div className="medal">{["🥇","🥈","🥉"][i]}</div><div className="cadetInfo"><div className="avatar small">{c.name[0]}</div><div><b>{c.name}</b><small>{c.roll} · {c.company}</small></div></div><strong>{c.percentage.toFixed(1)}%</strong></div>)}</div>;
 }
 
 function DashboardInsights({ranked}){
-  return <div className="dashboardInsights">
-    <TermPerformance ranked={ranked}/>
-    <GradeDistribution ranked={ranked}/>
-    <CompanyPerformance ranked={ranked}/>
-  </div>;
+  return <div className="dashboardInsights"><TermPerformance ranked={ranked}/><GradeDistribution ranked={ranked}/><CompanyPerformance ranked={ranked}/></div>;
 }
 
 function TermPerformance({ranked}){
-  const demo=[78.2,74.6,81.4,86.8];
-  const data=TERMS.map((term,i)=>{const x=ranked.filter(c=>c.term===term);return x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:demo[i]});
-  return <Panel title="Term Performance" icon="◈"><div className="termPerformance"><div className="termLine">{data.map((v,i)=><div className="termStep" key={TERMS[i]}><div className="termDot">{i+1}</div><b>{TERMS[i]}</b><strong>{v.toFixed(1)}%</strong><span style={{height:Math.max(18,v)+"%"}}/></div>)}</div><div className="termArrow">1st → 2nd → 3rd → 4th Term</div></div></Panel>;
+  const data=TERMS.map(term=>{const x=ranked.filter(c=>c.term===term);return x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:0});
+  return <Panel title="Term Performance" icon="◈"><div className="termPerformance"><div className="termLine">{data.map((v,i)=><div className="termStep" key={TERMS[i]}><div className="termDot">{i+1}</div><b>{TERMS[i]}</b><strong>{v.toFixed(1)}%</strong><span style={{height:Math.max(2,v)+"%"}}/></div>)}</div><div className="termArrow">1st → 2nd → 3rd → 4th Term</div>{!ranked.length&&<Empty text="No academic data yet."/ >}</div></Panel>;
 }
 
 function GradeDistribution({ranked}){
-  const demo={A:32,B:45,C:27,D:10,F:6};
-  const counts=ranked.length?["A","B","C","D","F"].reduce((o,g)=>{o[g]=ranked.filter(c=>grade(c.percentage)===g).length;return o},{}):demo;
-  const total=Object.values(counts).reduce((a,b)=>a+b,0)||1;
-  return <Panel title="Grade Distribution" icon="★"><div className="gradeDistribution">{["A","B","C","D","F"].map(g=><div className={"gradeItem grade"+g} key={g}><div className="gradeBar"><span style={{height:Math.max(8,counts[g]/total*100)+"%"}}/></div><b>{g}</b><strong>{counts[g]}</strong><small>{Math.round(counts[g]/total*100)}%</small></div>)}</div><div className="gradeLegend"><span>Excellent</span><span>Good</span><span>Average</span><span>Needs Attention</span></div></Panel>;
+  const counts=["A","B","C","D","F"].reduce((o,g)=>{o[g]=ranked.filter(c=>grade(c.percentage)===g).length;return o},{});
+  const total=ranked.length||1;
+  return <Panel title="Grade Distribution" icon="★"><div className="gradeDistribution">{["A","B","C","D","F"].map(g=><div className={"gradeItem grade"+g} key={g}><div className="gradeBar"><span style={{height:Math.max(2,counts[g]/total*100)+"%"}}/></div><b>{g}</b><strong>{counts[g]}</strong><small>{ranked.length?Math.round(counts[g]/total*100):0}%</small></div>)}</div><div className="gradeLegend"><span>Excellent</span><span>Good</span><span>Average</span><span>Needs Attention</span></div>{!ranked.length&&<Empty text="Grades appear after marks are entered."/ >}</Panel>;
 }
 
 function CompanyPerformance({ranked}){
-  const demo={Khalid:82.4,Tariq:76.8,Qasim:71.5,Salahuddin:85.9};
-  const data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co);return {company:co,value:x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:demo[co]}});
-  const best=Math.max(...data.map(x=>x.value));
-  return <Panel title="Company Performance Comparison" icon="⚔"><div className="companyPerformance">{data.map((x,i)=><div className="companyPerf" key={x.company}><div className="companyPerfHead"><b>{x.company}</b><strong>{x.value.toFixed(1)}%</strong></div><div className="companyPerfTrack"><span style={{width:x.value+"%"}}/></div><small>{x.value===best?"★ Best performing company":"Average academic performance"}</small></div>)}</div></Panel>;
+  const data=COMPANIES.map(co=>{const x=ranked.filter(c=>c.company===co);return {company:co,value:x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:0,count:x.length}});
+  const best=Math.max(0,...data.filter(x=>x.count).map(x=>x.value));
+  return <Panel title="Company Performance Comparison" icon="⚔"><div className="companyPerformance">{data.map(x=><div className="companyPerf" key={x.company}><div className="companyPerfHead"><b>{x.company}</b><strong>{x.count?x.value.toFixed(1)+"%":"—"}</strong></div><div className="companyPerfTrack"><span style={{width:x.value+"%"}}/></div><small>{x.count?(x.value===best?"★ Best performing company":"Average academic performance"):"No cadets registered"}</small></div>)}</div></Panel>;
 }
 
 function CompanyOverview({cadets}){
   const icons=["♜","⚔","✥","♞"];
-  const demoNames=["Ahmed Khan","Usman Ali","Hamza Raza","Bilal Ahmed","Hassan Shah","Saad Malik","Ahsan Iqbal","Danish Khan","Talha Asif","Fahad Noor","Zain Abbas","Owais Tariq"];
-  const demoCounts={Khalid:60,Tariq:60,Qasim:60,Salahuddin:60};
   const [selectedCompany,setSelectedCompany]=useState(null);
-  const getCompanyCadets=company=>{
-    const real=cadets.filter(c=>c.company===company);
-    if(real.length)return real;
-    return Array.from({length:Math.min(6,demoCounts[company])},(_,i)=>({
-      id:"demo-"+company+"-"+i,roll:"D-"+String(i+1).padStart(3,"0"),name:demoNames[(i+COMPANIES.indexOf(company)*3)%demoNames.length],
-      company,platoon:PLATOONS[i%3],term:"1st Term",courses:["Military Orientation","Drill"],marks:{quiz:82-i,mid:78-i,final:85-i,assign:80-i,speaking:88-i}
-    }));
-  };
-  return <><Panel title="Company Overview">
-    <div className="companyOverview">
-      {COMPANIES.map((company,i)=>{
-        const realCount=cadets.filter(c=>c.company===company).length;
-        const count=realCount||demoCounts[company];
-        return <button type="button" className={"companyTile companyTile"+i} key={company} onClick={()=>setSelectedCompany(company)}>
-          <div className="companyTileIcon">{icons[i]}</div>
-          <b>{company}</b>
-          <span>{count} Cadets</span>
-        </button>;
-      })}
-    </div>
-  </Panel>
-  {selectedCompany&&<CompanyCadetModal company={selectedCompany} cadets={getCompanyCadets(selectedCompany)} onClose={()=>setSelectedCompany(null)}/>}</>;
+  const getCompanyCadets=company=>cadets.filter(c=>c.company===company);
+  return <><Panel title="Company Overview"><div className="companyOverview">
+    {COMPANIES.map((company,i)=>{const list=cadets.filter(c=>c.company===company);return <button type="button" className={"companyTile companyTile"+i} key={company} onClick={()=>setSelectedCompany(company)}><div className="companyTileIcon">{icons[i]}</div><b>{company}</b><span>{list.length} Cadets</span></button>;})}
+  </div></Panel>{selectedCompany&&<CompanyCadetModal company={selectedCompany} cadets={getCompanyCadets(selectedCompany)} onClose={()=>setSelectedCompany(null)}/>}</>;
 }
 
 function CompanyCadetModal({company,cadets,onClose}){
@@ -291,17 +279,12 @@ function CompanyCadetModal({company,cadets,onClose}){
   </div>;
 }
 
-function PassFailChart({ranked,onLoadDemo}){
+function PassFailChart({ranked}){
   const [scope,setScope]=useState("company");
   const groups=scope==="company"?COMPANIES:PLATOONS;
-  const demoCompany={Khalid:[48,12],Tariq:[51,9],Qasim:[45,15],Salahuddin:[54,6]};
-  const demoPlatoon={"1st":[52,18],"2nd":[49,21],"3rd":[55,15]};
   const data=groups.map(group=>{
     const list=ranked.filter(c=>scope==="company"?c.company===group:c.platoon===group);
-    if(!list.length){
-      const d=(scope==="company"?demoCompany:demoPlatoon)[group];
-      return {label:scope==="platoon"?group+" Platoon":group,pass:d[0],fail:d[1],total:d[0]+d[1]};
-    }
+    if(!list.length)return {label:scope==="platoon"?group+" Platoon":group,pass:0,fail:0,total:0};
     const pass=list.filter(c=>c.percentage>=50).length;
     return {label:scope==="platoon"?group+" Platoon":group,pass,fail:list.length-pass,total:list.length};
   });
@@ -309,7 +292,7 @@ function PassFailChart({ranked,onLoadDemo}){
   const tick=Math.max(1,Math.ceil(max/4));
   const ticks=[tick*4,tick*3,tick*2,tick,0];
   return <Panel title="Pass & Fail Cadets" icon="▥">
-    <div className="passFailHead"><div><b>Cadet Performance Distribution</b><span>Pass: 50% and above · Fail: below 50%</span></div><div className="passFailHeadActions"><button className="outline demoDataBtn" onClick={onLoadDemo}>＋ Load Demo Data</button><div className="scopeTabs"><button className={scope==="company"?"selected":""} onClick={()=>setScope("company")}>Company Wise</button><button className={scope==="platoon"?"selected":""} onClick={()=>setScope("platoon")}>Platoon Wise</button></div></div></div>
+    <div className="passFailHead"><div><b>Cadet Performance Distribution</b><span>Pass: 50% and above · Fail: below 50%</span></div><div className="passFailHeadActions"><div className="scopeTabs"><button className={scope==="company"?"selected":""} onClick={()=>setScope("company")}>Company Wise</button><button className={scope==="platoon"?"selected":""} onClick={()=>setScope("platoon")}>Platoon Wise</button></div></div></div>
     <div className="passFailChart">
       <div className="passFailAxis">{ticks.map((t,i)=><span key={i}>{t}</span>)}</div>
       <div className="passFailPlot">
@@ -325,7 +308,7 @@ function PassFailChart({ranked,onLoadDemo}){
         </div>
       </div>
     </div>
-    <div className="passFailLegend"><span><i className="passDot"/>Pass</span><span><i className="failDot"/>Fail</span><strong>{ranked.length} active cadets</strong></div>
+    <div className="passFailLegend"><span><i className="passDot"/>Pass</span><span><i className="failDot"/>Fail</span><strong>{ranked.length} active cadets</strong></div>{!ranked.length&&<Empty text="Pass/fail chart will populate from saved cadet results."/ >}
   </Panel>;
 }
 function Card({n,t,icon}){return <div className="card"><div className="cardIcon">{icon}</div><div><b>{n}</b><span>{t}</span></div></div>}
