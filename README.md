@@ -94,12 +94,6 @@ Remove test records from the database after testing.
 
 7. Put the site behind PMA-approved HTTPS and access controls. Do not expose MySQL directly to the public internet.
 
-## Vercel option
-
-Vercel can host the Next.js app only if the MySQL database is reachable through a PMA-approved network path. If PMA's MySQL server is intranet-only, a public Vercel deployment cannot access it without an explicitly approved secure connection; deploying the app inside the PMA network may be more suitable.
-
-For Vercel, add the four environment variables in Project Settings → Environment Variables. Provision the database and apply the schema from a trusted machine with DBA approval before the first operational deployment. Never expose database credentials in client-side code.
-
 ## Data stored
 
 Each cadet record includes roll number, name, company, platoon, current term, assigned courses, marks, relegation status, and timestamps. Roll numbers are unique.
