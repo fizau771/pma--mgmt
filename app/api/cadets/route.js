@@ -74,7 +74,7 @@ export async function PUT(request) {
           ids.push(created.id);
         }
       }
-      await tx.cadet.deleteMany({ where: ids.length ? { id: { notIn: ids } } : {} });
+      // Upsert only. Do not delete records omitted by a stale browser payload; another administrator may have added records after this user last refreshed.
     });
     const cadets = await prisma.cadet.findMany({ orderBy: { createdAt: "desc" } });
     return Response.json({ ok: true, cadets: cadets.map(serialise) });
