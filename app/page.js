@@ -240,13 +240,13 @@ function DashboardInsights({ranked}){
 
 function TermPerformance({ranked}){
   const data=TERMS.map(term=>{const x=ranked.filter(c=>c.term===term);return x.length?x.reduce((s,c)=>s+c.percentage,0)/x.length:0});
-  return <Panel title="Term Performance" icon="◈"><div className="termPerformance"><div className="termLine">{data.map((v,i)=><div className="termStep" key={TERMS[i]}><div className="termDot">{i+1}</div><b>{TERMS[i]}</b><strong>{v.toFixed(1)}%</strong><span style={{height:Math.max(2,v)+"%"}}/></div>)}</div><div className="termArrow">1st → 2nd → 3rd → 4th Term</div>{!ranked.length&&<Empty text="No academic data yet."/ >}</div></Panel>;
+  return <Panel title="Term Performance" icon="◈"><div className="termPerformance"><div className="termLine">{data.map((v,i)=><div className="termStep" key={TERMS[i]}><div className="termDot">{i+1}</div><b>{TERMS[i]}</b><strong>{v.toFixed(1)}%</strong><span style={{height:Math.max(2,v)+"%"}}/></div>)}</div><div className="termArrow">1st → 2nd → 3rd → 4th Term</div>{!ranked.length&&<Empty text="No academic data yet."/>}</div></Panel>;
 }
 
 function GradeDistribution({ranked}){
   const counts=["A","B","C","D","F"].reduce((o,g)=>{o[g]=ranked.filter(c=>grade(c.percentage)===g).length;return o},{});
   const total=ranked.length||1;
-  return <Panel title="Grade Distribution" icon="★"><div className="gradeDistribution">{["A","B","C","D","F"].map(g=><div className={"gradeItem grade"+g} key={g}><div className="gradeBar"><span style={{height:Math.max(2,counts[g]/total*100)+"%"}}/></div><b>{g}</b><strong>{counts[g]}</strong><small>{ranked.length?Math.round(counts[g]/total*100):0}%</small></div>)}</div><div className="gradeLegend"><span>Excellent</span><span>Good</span><span>Average</span><span>Needs Attention</span></div>{!ranked.length&&<Empty text="Grades appear after marks are entered."/ >}</Panel>;
+  return <Panel title="Grade Distribution" icon="★"><div className="gradeDistribution">{["A","B","C","D","F"].map(g=><div className={"gradeItem grade"+g} key={g}><div className="gradeBar"><span style={{height:Math.max(2,counts[g]/total*100)+"%"}}/></div><b>{g}</b><strong>{counts[g]}</strong><small>{ranked.length?Math.round(counts[g]/total*100):0}%</small></div>)}</div><div className="gradeLegend"><span>Excellent</span><span>Good</span><span>Average</span><span>Needs Attention</span></div>{!ranked.length&&<Empty text="Grades appear after marks are entered."/>}</Panel>;
 }
 
 function CompanyPerformance({ranked}){
@@ -308,7 +308,7 @@ function PassFailChart({ranked}){
         </div>
       </div>
     </div>
-    <div className="passFailLegend"><span><i className="passDot"/>Pass</span><span><i className="failDot"/>Fail</span><strong>{ranked.length} active cadets</strong></div>{!ranked.length&&<Empty text="Pass/fail chart will populate from saved cadet results."/ >}
+    <div className="passFailLegend"><span><i className="passDot"/>Pass</span><span><i className="failDot"/>Fail</span><strong>{ranked.length} active cadets</strong></div>{!ranked.length&&<Empty text="Pass/fail chart will populate from saved cadet results."/>}
   </Panel>;
 }
 function Card({n,t,icon}){return <div className="card"><div className="cardIcon">{icon}</div><div><b>{n}</b><span>{t}</span></div></div>}
