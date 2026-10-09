@@ -53,7 +53,6 @@ export async function PUT(request) {
 
   try {
     await prisma.$transaction(async tx => {
-      const ids = [];
       for (const c of incoming) {
         const id = String(c.id || "").trim();
         const data = {
@@ -68,10 +67,8 @@ export async function PUT(request) {
         };
         if (id) {
           await tx.cadet.upsert({ where: { id }, create: { id, ...data }, update: data });
-          ids.push(id);
         } else {
           const created = await tx.cadet.create({ data });
-          ids.push(created.id);
         }
       }
       // Upsert only. Do not delete records omitted by a stale browser payload; another administrator may have added records after this user last refreshed.
